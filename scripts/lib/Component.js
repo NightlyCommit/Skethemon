@@ -18,7 +18,7 @@ class Component {
     }
 
     /**
-     * @returns {State}
+     * @returns {Promise<State>}
      */
     get initialState() {
         return null;

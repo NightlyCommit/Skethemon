@@ -14,7 +14,7 @@ exports.Task = class Task {
 
     /**
      * @param {State} state
-     * @return Promise<*>
+     * @return Promise<State[]>
      */
     run(state) {
         return new Promise((resolve) => {
@@ -25,7 +25,9 @@ exports.Task = class Task {
             //
             //     resolve(new State(this.name, state.data));
             // }, timeout);
-            resolve(new State(this.name, state.data));
+            resolve([
+                new State(this.name, state.data, null, [])
+            ]);
         })
     }
 };

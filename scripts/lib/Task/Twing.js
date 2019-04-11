@@ -22,6 +22,8 @@ exports.TaskTwing = class TaskTwing extends Task {
 
         let render = env.render(state.name);
 
-        return Promise.resolve(new State(state.name, render))
+        return Promise.resolve([
+            new State(state.name, render)
+        ])
     }
 };

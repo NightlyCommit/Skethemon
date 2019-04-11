@@ -1,13 +1,13 @@
 {
   "name": "skethemon",
   "version": "0.1.0",
-  "description": "",
+  "description": "Skethemon",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Eric MORAND <eric.morand@gmail.com> (https://github.com/ericmorand)",
   "license": "ISC",
   "dependencies": {
     "twing": "^2.2.3"
@@ -15,6 +15,7 @@
   "devDependencies": {
     "browser-sync": "^2.26.3",
     "eazy-logger": "^3.0.2",
-    "fs-extra": "^7.0.1"
+    "fs-extra": "^7.0.1",
+    "gaze": "^1.1.3"
   }
 }

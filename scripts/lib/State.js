@@ -1,4 +1,10 @@
 class State {
+    /**
+     * @param name
+     * @param data
+     * @param map
+     * @param dependencies
+     */
     constructor(name, data, map = null, dependencies = []) {
         this._name = name;
         this._data = data;

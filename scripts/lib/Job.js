@@ -3,6 +3,7 @@ const {State} = require('./State');
 
 exports.Job = class Job extends Task {
     /**
+     * @param {string} name
      * @param {Task[]} tasks
      */
     constructor(name, tasks) {
@@ -10,6 +11,13 @@ exports.Job = class Job extends Task {
 
         this._name = name;
         this._tasks = tasks;
+    }
+
+    /**
+     * @returns {string}
+     */
+    get name() {
+        return this._name;
     }
 
     /**
@@ -21,23 +29,29 @@ exports.Job = class Job extends Task {
 
     /**
      * @param {State} state
-     * @returns {Promise<*>}
+     * @returns {Promise<State[]>}
      */
     run(state) {
-        console.warn('JOB INITIAL STATE IS', state);
+        let results = [];
 
         let runFunctions = this.tasks.map((task) => {
             return task.run.bind(task);
         });
 
-        return runFunctions.reduce((accumulator, run) => {
-            return accumulator.then((state) => {
-                return run(state);
-            });
-        }, Promise.resolve(state)).then((state) => {
-            console.warn('JOB LATEST STATE IS', state);
+        return runFunctions.reduce((accumulatorPromise, nextPromise) => {
+            return accumulatorPromise
+                .then((state) => {
+                    return nextPromise(state);
+                })
+                .then((states) => {
+                    for (let state of states) {
+                        results.push(state);
+                    }
 
-            return state;
+                    return states[states.length - 1];
+                });
+        }, Promise.resolve(state)).then(() => {
+            return results;
         });
     }
 };
