@@ -13,6 +13,10 @@ class State {
     get data() {
         return this._data;
     }
+
+    get dependencies() {
+        return this._dependencies;
+    }
 }
 
 exports.State = State;

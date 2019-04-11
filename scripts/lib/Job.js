@@ -1,4 +1,5 @@
 const {Task} = require('./Task');
+const {State} = require('./State');
 
 exports.Job = class Job extends Task {
     /**
@@ -23,7 +24,7 @@ exports.Job = class Job extends Task {
      * @returns {Promise<*>}
      */
     run(state) {
-        let states = [];
+        console.warn('JOB INITIAL STATE IS', state);
 
         let runFunctions = this.tasks.map((task) => {
             return task.run.bind(task);
@@ -33,8 +34,10 @@ exports.Job = class Job extends Task {
             return accumulator.then((state) => {
                 return run(state);
             });
-        }, Promise.resolve(state)).then((states) => {
-            return states;
+        }, Promise.resolve(state)).then((state) => {
+            console.warn('JOB LATEST STATE IS', state);
+
+            return state;
         });
     }
 };

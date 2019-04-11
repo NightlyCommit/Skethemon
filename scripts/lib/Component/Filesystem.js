@@ -34,15 +34,13 @@ class ComponentFilesystem extends Component {
      * @returns {State}
      */
     get initialState() {
-        console.warn(this);
-
         return new Promise((resolve, reject) => {
             readFile(this._path, 'UTF-8', (err, data) => {
                 if (err) {
 
                 }
                 else {
-                    resolve(new State(this.path, data, null, [this.path]));
+                    resolve(new State('initial', data, null, [this.path]));
                 }
             });
         });

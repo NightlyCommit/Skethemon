@@ -11,5 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "twing": "^2.2.3"
+  },
+  "devDependencies": {
+    "browser-sync": "^2.26.3",
+    "eazy-logger": "^3.0.2",
+    "fs-extra": "^7.0.1"
   }
 }

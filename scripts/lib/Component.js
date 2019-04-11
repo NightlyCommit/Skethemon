@@ -9,6 +9,10 @@ class Component {
         this._states = [];
     }
 
+    get name() {
+        return this._name;
+    }
+
     get states() {
         return this._states;
     }
