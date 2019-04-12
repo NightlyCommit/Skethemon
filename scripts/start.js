@@ -49,7 +49,8 @@ let jobDefinitions = new Map([
                     options: {
                         cache: join('tmp/twig', component.path),
                         debug: true,
-                        auto_reload: true
+                        auto_reload: true,
+                        source_map: true
                     }
                 })
             ])
@@ -105,8 +106,7 @@ let buildComponent = (component, subComponent = null) => {
         }
 
         return Promise.all(promises);
-    }
-    else {
+    } else {
         /**
          * @type {Gaze}
          */

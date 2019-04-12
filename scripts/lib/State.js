@@ -1,9 +1,9 @@
 class State {
     /**
-     * @param name
-     * @param data
-     * @param map
-     * @param dependencies
+     * @param {string} name
+     * @param {*} data
+     * @param {Buffer} map
+     * @param {string[]} dependencies
      */
     constructor(name, data, map = null, dependencies = []) {
         this._name = name;
@@ -18,6 +18,10 @@ class State {
 
     get data() {
         return this._data;
+    }
+
+    get map() {
+        return this._map;
     }
 
     get dependencies() {
