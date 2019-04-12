@@ -1,7 +1,7 @@
 const {Task} = require('./Task');
 const {State} = require('./State');
 
-exports.Job = class Job extends Task {
+class Job extends Task {
     /**
      * @param {string} name
      * @param {Task[]} tasks
@@ -54,5 +54,6 @@ exports.Job = class Job extends Task {
             return results;
         });
     }
-};
+}
 
+exports.Job = Job;

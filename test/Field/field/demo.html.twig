@@ -1,13 +1,15 @@
 {% extends "@Test/demo.html.twig" %}
 
 {% block body %}
-    <div class="test-case">
-        <div class="test-case-title">
-            *** This is a test case ***
-        </div>
-        <div class="test-case-content">
-            {% include "@Src/Field/field/field.html.twig" %}
-            {#{% include "../../../src/Field/field.html.twig" %}#}
+    <div class="demo--Field--field">
+        <div class="test-case">
+            <div class="test-case-title">
+                *** This is a test case ***
+            </div>
+            <div class="test-case-content">
+                {% include "@Src/Field/field/field.html.twig" %}
+                {#{% include "../../../src/Field/field.html.twig" %}#}
+            </div>
         </div>
     </div>
 {% endblock %}

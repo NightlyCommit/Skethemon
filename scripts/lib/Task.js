@@ -1,6 +1,6 @@
 const {State} = require('./State');
 
-exports.Task = class Task {
+class Task {
     constructor(name) {
         this._name = name;
     }
@@ -30,4 +30,6 @@ exports.Task = class Task {
             ]);
         })
     }
-};
+}
+
+exports.Task = Task;

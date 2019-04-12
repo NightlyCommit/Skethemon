@@ -3,6 +3,7 @@ const {ComponentFilesystem} = require('./lib/Component/Filesystem');
 const {Job} = require('./lib/Job');
 const {Task} = require('./lib/Task');
 const {TaskTwing} = require('./lib/Task/Twing');
+const {TaskSass} = require('./lib/Task/Sass');
 const {outputFile} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
 const {join} = require('path');
@@ -11,35 +12,38 @@ const {Gaze} = require('gaze');
 
 let logger = new Logger({});
 
-let components = [
-    new ComponentFilesystem('Field/field', 'test/Field/field/demo.html.twig')
-];
+let twigComponent = new ComponentFilesystem('Field/field', 'test/Field/field/demo.html.twig');
+let sassComponent = new ComponentFilesystem('Field/field', 'test/Field/field/demo.scss');
 
 /**
  * @type {Map<Component, Gaze>}
  */
 let watchers = new Map();
 
+let twingJob = new Job('JOB 1', [
+    new Job('JOB 2', [
+        new Task('pre 1'),
+        new Task('pre 2'),
+        new Task('pre 3'),
+        new Task('pre 4'),
+        new Task('pre 5')
+    ]),
+    new TaskTwing('twig'),
+    new Task('post 1'),
+    new Task('post 2'),
+    new Task('post 3'),
+    new Task('post 4')
+]);
+
+let sassJob = new Job('Stylesheet', [
+    new TaskSass('sass')
+]);
+
 /**
  * @param {Component} component
  * @returns {Promise<State[]>}
  */
-let buildComponent = (component) => {
-    let job = new Job('JOB 1', [
-        new Job('JOB 2', [
-            new Task('pre 1'),
-            new Task('pre 2'),
-            new Task('pre 3'),
-            new Task('pre 4'),
-            new Task('pre 5')
-        ]),
-        new TaskTwing('twig'),
-        new Task('post 1'),
-        new Task('post 2'),
-        new Task('post 3'),
-        new Task('post 4')
-    ]);
-
+let buildComponent = (component, job, output) => {
     // close watcher
     /**
      * @type {Gaze}
@@ -65,7 +69,7 @@ let buildComponent = (component) => {
             let state = states[states.length - 1];
 
             return new Promise((resolve, reject) => {
-                outputFile('www/Field/field/index.html', state.data, (err) => {
+                outputFile('www/Field/field/' + output, state.data, (err) => {
                     if (err) {
                         reject(err);
                     } else {
@@ -84,18 +88,18 @@ let buildComponent = (component) => {
             }
 
             for (let dependency of dependencies) {
-                logger.unprefixed('info', dependency);
+                logger.unprefixed('info', '>>> ' + dependency);
             }
 
             watcher = new Gaze(dependencies).on('changed', () => {
-                buildComponent(component)
+                buildComponent(component, job, output)
                     .then(() => {
                         let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
 
                         if (bs) {
-                            logger.unprefixed('info', 'Reloading index.html');
+                            logger.unprefixed('info', 'Reloading ' + output);
 
-                            bs.reload('index.html');
+                            bs.reload(output);
                         }
                     });
             });
@@ -104,23 +108,26 @@ let buildComponent = (component) => {
         });
 };
 
-for (let component of components) {
-    let browserSync = createBrowserSync(component.name);
-    let browserSyncConfig = {
-        server: join('www', component.name),
-        ui: false,
-        open: false,
-        notify: false,
-        logLevel: 'silent'
-    };
+let browserSync = createBrowserSync('Field/field');
+let browserSyncConfig = {
+    server: join('www', 'Field/field'),
+    ui: false,
+    open: false,
+    notify: false,
+    logLevel: 'silent'
+};
 
-    let browserSyncInit = new Promise(function (resolve) {
-        browserSync.init(browserSyncConfig, function (err, bs) {
+let browserSyncInit = new Promise(function (resolve, reject) {
+    browserSync.init(browserSyncConfig, function (err, bs) {
+        if (err) {
+            reject(err);
+        } else {
+
             let urls = bs.options.get("urls");
 
             let maxLength = 0;
 
-            let name = component.name;
+            let name = 'Field/field';
             let localURL = urls.get('local');
             let message = name + localURL;
 
@@ -134,11 +141,14 @@ for (let component of components) {
             logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
 
             resolve(bs);
-        });
+        }
     });
+});
 
-    browserSyncInit
-        .then(() => {
-            return buildComponent(component);
-        });
-}
+browserSyncInit
+    .then(() => {
+        return Promise.all([
+            buildComponent(twigComponent, twingJob, 'index.html'),
+            buildComponent(sassComponent, sassJob, 'index.css')
+        ])
+    });
