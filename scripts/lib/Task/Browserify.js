@@ -27,8 +27,7 @@ class TaskBrowserify extends Task {
         });
 
         let config = Object.assign({}, this.config, {
-            entries: [readable],
-            basedir: 'test/Field/field'
+            entries: [readable]
         });
 
         return new Promise((resolve, reject) => {
@@ -46,7 +45,7 @@ class TaskBrowserify extends Task {
 
                     // console.warn(buffer);
 
-                    let state = new State('browserify', buffer, null, dependencies);
+                    let state = new State(this.name, buffer, null, dependencies);
 
                     resolve([
                         state

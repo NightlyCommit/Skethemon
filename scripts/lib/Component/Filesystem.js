@@ -1,5 +1,4 @@
 const {readFile} = require('fs');
-const {Source} = require('../Source');
 const {Component} = require('../Component');
 const {State} = require('../State');
 

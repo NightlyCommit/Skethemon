@@ -1,29 +1,58 @@
 const {Task} = require('../Task');
 const {State} = require('../State');
-const {TwingEnvironment, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingSource, TwingLoaderArray, TwingLoaderChain} = require('twing');
+const {TwingEnvironment, TwingLoaderArray, TwingLoaderChain} = require('twing');
 
-exports.TaskTwing = class TaskTwing extends Task {
+/**
+ * @typedef {Object} TaskTwingConfiguration
+ * @property {TwingLoaderInterface} loader
+ * @property {TwingEnvironmentOptions | null} options
+ * @property {Map<string, TwingExtensionInterface> | null} extensions
+ */
+
+class CustomLoaderArray extends TwingLoaderArray {
+    getCacheKey(name) {
+        return name;
+    }
+}
+
+class TaskTwing extends Task {
+    /**
+     * @param {string} name
+     * @param {TaskTwingConfiguration} config
+     */
+    constructor(name, config) {
+        super(name);
+
+        /**
+         * @type {TaskTwingConfiguration}
+         * @private
+         */
+        this._config = config;
+    }
+
     /**
      * @param {State} state
      */
     run(state) {
-        let fsLoader = new TwingLoaderFilesystem();
+        let loader = new TwingLoaderChain([
+            this._config.loader,
+            new CustomLoaderArray(new Map([[
+                'entry', state.data
+            ]]))
+        ]);
 
-        fsLoader.addPath('src', 'Src');
-        fsLoader.addPath('test', 'Test');
+        let env = new TwingEnvironment(loader, this._config.options);
 
-        let env = new TwingEnvironment(new TwingLoaderChain([
-            new TwingLoaderArray(new Map([
-                [state.name, state.data]
-            ])),
-            new TwingLoaderRelativeFilesystem(),
-            fsLoader
-        ]), {});
+        for (let [name, extension] of this._config.extensions) {
+            env.addExtension(extension, name);
+        }
 
-        let render = env.render(state.name);
+        let render = env.render('entry');
 
         return Promise.resolve([
-            new State(state.name, render)
+            new State(this.name, render)
         ])
     }
-};
+}
+
+exports.TaskTwing = TaskTwing;

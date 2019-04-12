@@ -2,15 +2,15 @@ const {Component} = require('./lib/Component');
 const {ComponentFilesystem} = require('./lib/Component/Filesystem');
 const {ComponentCompound} = require('./lib/Component/Compound');
 const {Job} = require('./lib/Job');
-const {Task} = require('./lib/Task');
 const {TaskTwing} = require('./lib/Task/Twing');
 const {TaskSass} = require('./lib/Task/Sass');
 const {TaskBrowserify} = require('./lib/Task/Browserify');
 const {outputFile} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
-const {join} = require('path');
+const {join, dirname} = require('path');
 const {Logger} = require('eazy-logger');
 const {Gaze} = require('gaze');
+const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing');
 
 let logger = new Logger({});
 
@@ -25,103 +25,151 @@ let components = [
     ])
 ];
 
+let jobDefinitions = new Map([
+    ['twig', {
+        /**
+         * @param {ComponentFilesystem} component
+         * @returns {Job}
+         */
+        jobFactory: (component) => {
+            let filesystemLoader = new TwingLoaderFilesystem();
+
+            filesystemLoader.addPath('src', 'Src');
+            filesystemLoader.addPath('test', 'Test');
+
+            return new Job('Twig', [
+                new TaskTwing('render', {
+                    loader: new TwingLoaderChain([
+                        filesystemLoader,
+                        new TwingLoaderRelativeFilesystem(),
+                    ]),
+                    extensions: new Map([
+                        ['debug', new TwingExtensionDebug()]
+                    ]),
+                    options: {
+                        cache: join('tmp/twig', component.path),
+                        debug: true,
+                        auto_reload: true
+                    }
+                })
+            ])
+        },
+        output: 'index.html'
+    }],
+    ['sass', {
+        /**
+         * @param {ComponentFilesystem} component
+         * @returns {Job}
+         */
+        jobFactory: (component) => new Job('Stylesheet', [
+            new TaskSass('sass', {
+                precision: 8,
+                outFile: 'index.css',
+                includePaths: [
+                    dirname(component.path)
+                ]
+            })
+        ]),
+        output: 'index.css'
+    }],
+    ['js', {
+        /**
+         * @param {ComponentFilesystem} component
+         * @returns {Job}
+         */
+        jobFactory: (component) => new Job('JavaScript', [
+            new TaskBrowserify('browserify', {
+                basedir: dirname(component.path)
+            })
+        ]),
+        output: 'index.js'
+    }],
+]);
+
 /**
  * @type {Map<Component, Gaze>}
  */
 let watchers = new Map();
 
-let twigJob = new Job('JOB 1', [
-    new Job('JOB 2', [
-        new Task('pre 1'),
-        new Task('pre 2'),
-        new Task('pre 3'),
-        new Task('pre 4'),
-        new Task('pre 5')
-    ]),
-    new TaskTwing('twig'),
-    new Task('post 1'),
-    new Task('post 2'),
-    new Task('post 3'),
-    new Task('post 4')
-]);
-
-let sassJob = new Job('Stylesheet', [
-    new TaskSass('sass')
-]);
-
-let javaScriptJob = new Job('Stylesheet', [
-    new TaskBrowserify('sass')
-]);
-
 /**
  * @param {ComponentCompound} component
+ * @param {ComponentFilesystem} subComponent
  * @returns {Promise<State[]>}
  */
-let buildComponent = (component, name, job, output) => {
-    let subComponent = component.getComponent(name);
+let buildComponent = (component, subComponent = null) => {
+    if (!subComponent) {
+        let promises = [];
 
-    // close watcher
-    /**
-     * @type {Gaze}
-     */
-    let watcher;
+        for (let subComponent of component) {
+            promises.push(buildComponent(component, subComponent));
+        }
 
-    if (watchers.has(subComponent)) {
-        watcher = watchers.get(subComponent);
+        return Promise.all(promises);
     }
+    else {
+        /**
+         * @type {Gaze}
+         */
+        let watcher;
 
-    if (watcher) {
-        watcher.close();
-    }
+        if (watchers.has(subComponent)) {
+            watcher = watchers.get(subComponent);
+        }
 
-    return subComponent.initialState
-        .then((state) => {
-            return job.run(state)
-                .then((states) => {
-                    return [state].concat(states);
-                })
-        })
-        .then((states) => {
-            let state = states[states.length - 1];
+        if (watcher) {
+            watcher.close();
+        }
 
-            return new Promise((resolve, reject) => {
-                outputFile(join('www', component.name, output), state.data, (err) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(states);
-                    }
-                });
-            });
-        })
-        .then((states) => {
-            let dependencies = [];
+        let jobDefinition = jobDefinitions.get(subComponent.name);
 
-            for (let state of states) {
-                for (let dependency of state.dependencies) {
-                    dependencies.push(dependency);
-                }
-            }
+        let job = jobDefinition.jobFactory(subComponent);
+        let output = jobDefinition.output;
 
-            // for (let dependency of dependencies) {
-            //     logger.unprefixed('info', '>>> ' + dependency);
-            // }
+        return subComponent.initialState
+            .then((state) => {
+                return job.run(state)
+                    .then((states) => {
+                        return [state].concat(states);
+                    })
+            })
+            .then((states) => {
+                let state = states[states.length - 1];
 
-            watcher = new Gaze(dependencies).on('changed', () => {
-                buildComponent(component, name, job, output)
-                    .then(() => {
-                        let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
-
-                        if (bs) {
-                            logger.unprefixed('info', 'Reloading ' + output);
-
-                            bs.reload(output);
+                return new Promise((resolve, reject) => {
+                    outputFile(join('www', component.name, output), state.data, (err) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(states);
                         }
                     });
-            });
+                });
+            })
+            .then((states) => {
+                let dependencies = [];
 
-            watchers.set(subComponent, watcher);
-        });
+                for (let state of states) {
+                    for (let dependency of state.dependencies) {
+                        dependencies.push(dependency);
+                    }
+                }
+
+                watcher = new Gaze(dependencies).on('changed', () => {
+                    buildComponent(component, subComponent)
+                        .then(() => {
+                            let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
+
+                            if (bs) {
+                                logger.unprefixed('info', 'Reloading ' + output);
+
+                                bs.reload(output);
+                            }
+                        });
+                });
+
+                watchers.set(subComponent, watcher);
+            });
+    }
 };
 
 for (let component of components) {
@@ -164,12 +212,5 @@ for (let component of components) {
         });
     });
 
-    browserSyncInit
-        .then(() => {
-            return Promise.all([
-                buildComponent(component, 'twig', twigJob, 'index.html'),
-                buildComponent(component, 'sass', sassJob, 'index.css'),
-                buildComponent(component, 'js', javaScriptJob, 'index.js')
-            ])
-        });
+    browserSyncInit.then(() => buildComponent(component));
 }

@@ -1,5 +1,8 @@
 const {Component} = require ('../Component');
 
+/**
+ * @implements IterableIterator
+ */
 class ComponentCompound extends Component {
     /**
      * @param {string} name
@@ -32,6 +35,13 @@ class ComponentCompound extends Component {
      */
     getComponent(name) {
         return this._components.has(name) ? this._components.get(name) : null;
+    }
+
+    /**
+     * @returns {IterableIterator<Component>}
+     */
+    [Symbol.iterator]() {
+        return this.components.values();
     }
 }
 

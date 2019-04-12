@@ -18,13 +18,6 @@ class Task {
      */
     run(state) {
         return new Promise((resolve) => {
-            // let timeout = 0; //Math.ceil(Math.random() * 1000);
-            //
-            // setTimeout(() => {
-            //     console.warn(this.name, timeout);
-            //
-            //     resolve(new State(this.name, state.data));
-            // }, timeout);
             resolve([
                 new State(this.name, state.data, null, [])
             ]);

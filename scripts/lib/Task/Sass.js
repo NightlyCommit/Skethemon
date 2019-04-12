@@ -17,12 +17,10 @@ class TaskSass extends Task {
     run(state) {
         let sassConfig = this.getConfig('index.css');
 
-        sassConfig.outFile = 'index.css';
-        sassConfig.sourceMap = true;
-        sassConfig.data = state.data;
-        sassConfig.includePaths = [
-            'test/Field/field'
-        ];
+        sassConfig = Object.assign({}, sassConfig, {
+            sourceMap: true,
+            data: state.data
+        });
 
         return new Promise((resolve, reject) => {
             render(sassConfig, (err, sassRenderResult) => { // sass render success
@@ -34,7 +32,7 @@ class TaskSass extends Task {
                     let dependencies = sassRenderResult ? sassRenderResult.stats.includedFiles : [];
 
                     resolve([
-                        new State('css', cssBuffer, null, dependencies)
+                        new State(this.name, cssBuffer, null, dependencies)
                     ]);
                 }
             })
