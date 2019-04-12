@@ -5,6 +5,7 @@ const {Job} = require('./lib/Job');
 const {Task} = require('./lib/Task');
 const {TaskTwing} = require('./lib/Task/Twing');
 const {TaskSass} = require('./lib/Task/Sass');
+const {TaskBrowserify} = require('./lib/Task/Browserify');
 const {outputFile} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
 const {join} = require('path');
@@ -20,6 +21,7 @@ let components = [
     new ComponentCompound('Field/field', [
         new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
         new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
+        new ComponentFilesystem('js', 'test/Field/field/demo.js'),
     ])
 ];
 
@@ -28,7 +30,7 @@ let components = [
  */
 let watchers = new Map();
 
-let twingJob = new Job('JOB 1', [
+let twigJob = new Job('JOB 1', [
     new Job('JOB 2', [
         new Task('pre 1'),
         new Task('pre 2'),
@@ -45,6 +47,10 @@ let twingJob = new Job('JOB 1', [
 
 let sassJob = new Job('Stylesheet', [
     new TaskSass('sass')
+]);
+
+let javaScriptJob = new Job('Stylesheet', [
+    new TaskBrowserify('sass')
 ]);
 
 /**
@@ -161,8 +167,9 @@ for (let component of components) {
     browserSyncInit
         .then(() => {
             return Promise.all([
-                buildComponent(component, 'twig', twingJob, 'index.html'),
-                buildComponent(component, 'sass', sassJob, 'index.css')
+                buildComponent(component, 'twig', twigJob, 'index.html'),
+                buildComponent(component, 'sass', sassJob, 'index.css'),
+                buildComponent(component, 'js', javaScriptJob, 'index.js')
             ])
         });
 }
