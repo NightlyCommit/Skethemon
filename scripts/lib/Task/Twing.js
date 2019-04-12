@@ -7,14 +7,8 @@ const {TwingEnvironment, TwingLoaderArray, TwingLoaderChain} = require('twing');
  * @property {TwingLoaderInterface} loader
  * @property {TwingEnvironmentOptions | null} options
  * @property {Map<string, TwingExtensionInterface> | null} extensions
+ * @property {*} context
  */
-
-class CustomLoaderArray extends TwingLoaderArray {
-    getCacheKey(name) {
-        return name;
-    }
-}
-
 class TaskTwing extends Task {
     /**
      * @param {string} name
@@ -36,7 +30,7 @@ class TaskTwing extends Task {
     run(state) {
         let loader = new TwingLoaderChain([
             this._config.loader,
-            new CustomLoaderArray(new Map([[
+            new TwingLoaderArray(new Map([[
                 'entry', state.data
             ]]))
         ]);
@@ -47,7 +41,7 @@ class TaskTwing extends Task {
             env.addExtension(extension, name);
         }
 
-        let render = env.render('entry');
+        let render = env.render('entry', this._config.context);
 
         return Promise.resolve([
             new State(this.name, render)

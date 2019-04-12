@@ -5,6 +5,7 @@ const {Job} = require('./lib/Job');
 const {TaskTwing} = require('./lib/Task/Twing');
 const {TaskSass} = require('./lib/Task/Sass');
 const {TaskBrowserify} = require('./lib/Task/Browserify');
+const {TaskTwigData} = require('./lib/Task/TwigData');
 const {outputFile} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
 const {join, dirname} = require('path');
@@ -38,6 +39,9 @@ let jobDefinitions = new Map([
             filesystemLoader.addPath('test', 'Test');
 
             return new Job('Twig', [
+                new TaskTwigData('data', {
+                    path: join(dirname(component.path), 'data.js')
+                }),
                 new TaskTwing('render', {
                     loader: new TwingLoaderChain([
                         filesystemLoader,
@@ -51,7 +55,16 @@ let jobDefinitions = new Map([
                         debug: true,
                         auto_reload: true,
                         source_map: true
-                    }
+                    },
+                    context: ((file) => {
+                        let data = {
+                            a: 1
+                        };
+
+                        let dependencies = [];
+
+                        return [data, dependencies];
+                    })(join(dirname(component.path), 'data.js'))
                 })
             ])
         },

@@ -5,10 +5,10 @@
         {% for testCase in testCases %}
             <div class="test-case">
                 <div class="test-case-title">
-                    *** This is a test case ***
+                    {{ testCase.title }}
                 </div>
                 <div class="test-case-content">
-                    {% include "@Src/Field/field/field.html.twig" %}
+                    {% include "@Src/Field/field/field.html.twig" with testCase.data %}
                     {#{% include "../../../src/Field/field.html.twig" %}#}
                 </div>
             </div>
