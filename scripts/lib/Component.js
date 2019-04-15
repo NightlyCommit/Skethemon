@@ -1,11 +1,20 @@
 const {State} = require('./State');
 
+/**
+ * @implements {ComponentInterface}
+ */
 class Component {
     /**
      * @param {string} name
      */
     constructor(name) {
         this._name = name;
+
+        /**
+         * @type {Array<State>}
+         * @private
+         */
+        this._states = [];
     }
 
     get name() {
@@ -13,9 +22,16 @@ class Component {
     }
 
     /**
+     * @returns {Array<State>}
+     */
+    get states() {
+        return this._states;
+    }
+
+    /**
      * @returns {Promise<State>}
      */
-    get initialState() {
+    initialState() {
         return Promise.resolve(new State(this.name, null));
     }
 }

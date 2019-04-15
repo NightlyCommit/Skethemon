@@ -8,8 +8,7 @@
                     {{ testCase.title }}
                 </div>
                 <div class="test-case-content">
-                    {% include "@Src/Field/field/index.html.twig" with testCase.data %}
-                    {#{% include "../../../src/Field/field.html.twig" %}#}
+                    {% include "@Src/Field/Formatter/image-formatter.html.twig" with testCase.data %}
                 </div>
             </div>
         {% endfor %}

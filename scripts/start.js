@@ -6,25 +6,41 @@ const {TaskTwing} = require('./lib/Task/Twing');
 const {TaskSass} = require('./lib/Task/Sass');
 const {TaskBrowserify} = require('./lib/Task/Browserify');
 const {TaskTwigData} = require('./lib/Task/TwigData');
-const {outputFile} = require('fs-extra');
+const {outputFile, copy} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
-const {join, dirname} = require('path');
+const {join, dirname, resolve} = require('path');
 const {Logger} = require('eazy-logger');
 const {Gaze} = require('gaze');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing');
+const util = require('util');
 
 let logger = new Logger({});
 
 /**
- * @type {ComponentCompound[]}
+ * @type {ComponentCompound}
  */
-let components = [
-    new ComponentCompound('Field/field', [
-        new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
-        new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
-        new ComponentFilesystem('js', 'test/Field/field/demo.js'),
+let app = new ComponentCompound('App', [
+    new ComponentCompound('Field', [
+        new ComponentCompound('field', [
+            new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
+            new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
+            new ComponentFilesystem('js', 'test/Field/field/demo.js'),
+        ]),
+        new ComponentCompound('Formatter', [
+            new ComponentCompound('image-formatter', [
+                new ComponentFilesystem('twig', 'test/Field/Formatter/image-formatter/demo.html.twig'),
+                new ComponentFilesystem('sass', 'test/Field/Formatter/image-formatter/demo.scss'),
+                new ComponentFilesystem('js', 'test/Field/Formatter/image-formatter/demo.js'),
+            ])
+        ])
     ])
-];
+]);
+
+let app2 = new ComponentCompound('Field/field', [
+    new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
+    new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
+    new ComponentFilesystem('js', 'test/Field/field/demo.js'),
+]);
 
 let jobDefinitions = new Map([
     ['twig', {
@@ -43,6 +59,7 @@ let jobDefinitions = new Map([
                     path: join(dirname(component.path), 'data.js')
                 }),
                 new TaskTwing('render', {
+                    file: component.path,
                     loader: new TwingLoaderChain([
                         filesystemLoader,
                         new TwingLoaderRelativeFilesystem(),
@@ -78,10 +95,10 @@ let jobDefinitions = new Map([
         jobFactory: (component) => new Job('Stylesheet', [
             new TaskSass('sass', {
                 precision: 8,
+                file: resolve(component.path),
                 outFile: 'index.css',
-                includePaths: [
-                    dirname(component.path)
-                ]
+                sourceMap: true,
+                sourceMapEmbed: true
             })
         ]),
         output: 'index.css'
@@ -119,6 +136,11 @@ let buildComponent = (component, subComponent = null) => {
         }
 
         return Promise.all(promises);
+
+        // return component.initialState()
+        //     .then((state) => {
+        //         console.warn(util.inspect(component, {depth: null}));
+        //     });
     } else {
         /**
          * @type {Gaze}
@@ -138,7 +160,7 @@ let buildComponent = (component, subComponent = null) => {
         let job = jobDefinition.jobFactory(subComponent);
         let output = jobDefinition.output;
 
-        return subComponent.initialState
+        return subComponent.initialState()
             .then((state) => {
                 return job.run(state)
                     .then((states) => {
@@ -146,9 +168,26 @@ let buildComponent = (component, subComponent = null) => {
                     })
             })
             .then((states) => {
-                let state = states[states.length - 1];
+                let writePromises = [];
 
-                return new Promise((resolve, reject) => {
+                let state = states[states.length - 1];
+                let map = state.map;
+
+                if (map) {
+                    let mapObject = JSON.parse(map.toString());
+
+                    for (let source of mapObject.sources) {
+                        let dest = join('www', component.name, source);
+
+                        writePromises.push(new Promise((resolve, reject) => {
+                            copy(source, dest, (err) => {
+                                resolve();
+                            });
+                        }));
+                    }
+                }
+
+                writePromises.push(new Promise((resolve, reject) => {
                     outputFile(join('www', component.name, output), state.data, (err) => {
                         if (err) {
                             reject(err);
@@ -156,14 +195,21 @@ let buildComponent = (component, subComponent = null) => {
                             resolve(states);
                         }
                     });
-                });
+                }));
+
+                return Promise.all(writePromises).then(() => states);
             })
             .then((states) => {
                 let dependencies = [];
 
-                for (let state of states) {
-                    for (let dependency of state.dependencies) {
-                        dependencies.push(dependency);
+                let state = states[states.length - 1];
+                let map = state.map;
+
+                if (map) {
+                    let mapObject = JSON.parse(map.toString());
+
+                    for (let source of mapObject.sources) {
+                        dependencies.push(source);
                     }
                 }
 
@@ -185,7 +231,9 @@ let buildComponent = (component, subComponent = null) => {
     }
 };
 
-for (let component of components) {
+let initPromises = [];
+
+for (let component of [app2]) {
     let componentName = component.name;
 
     let browserSync = createBrowserSync(componentName);
@@ -197,8 +245,8 @@ for (let component of components) {
         logLevel: 'silent'
     };
 
-    let browserSyncInit = new Promise(function (resolve, reject) {
-        browserSync.init(browserSyncConfig, function (err, bs) {
+    let browserSyncInit = () => new Promise((resolve, reject) => {
+        browserSync.init(browserSyncConfig, (err, bs) => {
             if (err) {
                 reject(err);
             } else {
@@ -223,7 +271,9 @@ for (let component of components) {
                 resolve(bs);
             }
         });
-    });
+    }).then(() => buildComponent(component));
 
-    browserSyncInit.then(() => buildComponent(component));
+    initPromises.push(browserSyncInit);
 }
+
+initPromises.reduce((previousValue, currentValue) => previousValue.then(() => currentValue()), Promise.resolve());

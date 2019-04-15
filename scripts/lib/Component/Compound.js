@@ -1,4 +1,5 @@
 const {Component} = require ('../Component');
+const {StateCompound} = require ('../State/Compound');
 
 /**
  * @implements IterableIterator
@@ -42,6 +43,22 @@ class ComponentCompound extends Component {
      */
     [Symbol.iterator]() {
         return this.components.values();
+    }
+
+    /**
+     * @returns {Promise<State>}
+     */
+    initialState() {
+        let promises = [];
+
+        for (let component of this) {
+            promises.push(component.initialState())
+        }
+
+        return Promise.all(promises)
+            .then((states) => {
+                return new StateCompound(this.name, states);
+            });
     }
 }
 

@@ -1,8 +1,10 @@
 const {Task} = require('../Task');
 const {State} = require('../State');
-const {Readable} = require('stream');
+const {Readable, Writable} = require('stream');
+const {join} = require('path');
 
 const Browserify = require('browserify');
+const {fromSource, removeComments} = require('convert-source-map');
 
 class TaskBrowserify extends Task {
     constructor(name, config) {
@@ -17,7 +19,6 @@ class TaskBrowserify extends Task {
      */
     run(state) {
         let currentFile = null;
-        let dependencies = [];
 
         let readable = new Readable({
             read() {
@@ -27,14 +28,13 @@ class TaskBrowserify extends Task {
         });
 
         let config = Object.assign({}, this.config, {
-            entries: [readable]
+            entries: [readable],
+            debug: true
         });
 
         return new Promise((resolve, reject) => {
             Browserify(config)
                 .on('file', function (file, id, parent) {
-                    dependencies.push(file);
-
                     currentFile = file;
                 })
                 .bundle((err, buffer) => {
@@ -43,13 +43,28 @@ class TaskBrowserify extends Task {
                         // response.setError(currentFile, err.toString());
                     }
 
-                    // console.warn(buffer);
+                    let js = buffer.toString();
 
-                    let state = new State(this.name, buffer, null, dependencies);
+                    /**
+                     * @type {Converter}
+                     */
+                    let map = fromSource(buffer.toString());
 
-                    resolve([
-                        state
-                    ]);
+                    if (map) {
+                        let sources = [];
+
+                        for (let source of map.getProperty('sources')) {
+                            sources.push(join(this.config.basedir, source));
+                        }
+
+                        map.setProperty('sources', sources);
+
+                        js = removeComments(js) + map.toComment();
+                    }
+
+                    let state = new State(this.name, js, Buffer.from(map.toJSON()));
+
+                    resolve([state]);
                 })
             ;
         });

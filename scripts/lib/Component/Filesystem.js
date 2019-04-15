@@ -2,6 +2,10 @@ const {readFile} = require('fs');
 const {Component} = require('../Component');
 const {State} = require('../State');
 
+/**
+ * @class
+ * @implements IterableIterator
+ */
 class ComponentFilesystem extends Component {
     constructor(name, path) {
         super(name);
@@ -32,14 +36,14 @@ class ComponentFilesystem extends Component {
     /**
      * @returns {Promise<State>}
      */
-    get initialState() {
+    initialState() {
         return new Promise((resolve, reject) => {
             readFile(this._path, 'UTF-8', (err, data) => {
                 if (err) {
                     reject(err);
                 }
                 else {
-                    resolve(new State(this.name, data, null, [this.path]));
+                    resolve(new State(this.path, data, null, [this.path]));
                 }
             });
         });

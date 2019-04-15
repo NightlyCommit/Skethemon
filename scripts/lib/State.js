@@ -1,3 +1,7 @@
+/**
+ * @class
+ * @implements IterableIterator
+ */
 class State {
     /**
      * @param {string} name

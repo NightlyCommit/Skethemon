@@ -8,6 +8,7 @@ class TaskSass extends Task {
         super(name);
 
         this.config = config || {};
+
     }
 
     /**
@@ -15,36 +16,26 @@ class TaskSass extends Task {
      * @returns {Promise<State[]>}
      */
     run(state) {
-        let sassConfig = this.getConfig('index.css');
-
-        sassConfig = Object.assign({}, sassConfig, {
-            sourceMap: true,
+        let sassConfig = Object.assign({}, this.config, {
             data: state.data
         });
 
         return new Promise((resolve, reject) => {
-            render(sassConfig, (err, sassRenderResult) => { // sass render success
+            render(sassConfig, (err, sassRenderResult) => {
                 if (err) {
                     reject(err);
                 }
                 else {
-                    let cssBuffer = sassRenderResult ? sassRenderResult.css : Buffer.from('');
-                    let dependencies = sassRenderResult ? sassRenderResult.stats.includedFiles : [];
+                    let css = sassRenderResult.css;
+                    let map = sassRenderResult.map ;
 
                     resolve([
-                        new State(this.name, cssBuffer, null, dependencies)
+                        new State(this.name, css, map)
                     ]);
                 }
             })
         })
     }
-
-    getConfig(file) {
-        return Object.assign({}, this.config, {
-            file: file,
-            sourceMapEmbed: true
-        });
-    };
 }
 
 exports.TaskSass = TaskSass;
