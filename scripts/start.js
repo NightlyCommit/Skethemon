@@ -48,6 +48,8 @@ let app2 = new ComponentCompound('Field/field', [
  */
 let dataDependencies = new Map();
 
+let assets = new Map();
+
 let jobDefinitions = new Map([
     ['twig', {
         /**
@@ -71,7 +73,7 @@ let jobDefinitions = new Map([
                         ['debug', new TwingExtensionDebug()],
                         ['drupal', new TwingExtensionDrupal()]
                     ]),
-                    options: {
+                    environment_options: {
                         cache: join('tmp/twig', component.path),
                         debug: true,
                         auto_reload: true,
@@ -108,7 +110,19 @@ let jobDefinitions = new Map([
                 sourceMap: true,
                 sourceMapEmbed: true
             }),
-            new TaskCssRebase()
+            new TaskCssRebase('rebase', {
+                rebase: (obj, done) => {
+                    let resolved = obj.resolved;
+
+                    let componentAssets = assets.has(component) ? assets.get(component) : [];
+
+                    componentAssets.push(resolved.path);
+
+                    assets.set(component, componentAssets);
+
+                    done();
+                }
+            })
         ]),
         output: 'index.css'
     }],
@@ -190,10 +204,23 @@ let buildComponent = (component, subComponent = null) => {
 
                         writePromises.push(new Promise((resolve, reject) => {
                             copy(source, dest, (err) => {
-                                resolve();
+                                resolve(source);
                             });
                         }));
                     }
+                }
+
+                // ...
+                let componentAssets = assets.has(subComponent) ? assets.get(subComponent) : [];
+
+                for (let source of componentAssets) {
+                    let dest = join('www', component.name, source);
+
+                    writePromises.push(new Promise((resolve, reject) => {
+                        copy(source, dest, (err) => {
+                            resolve(source);
+                        });
+                    }));
                 }
 
                 writePromises.push(new Promise((resolve, reject) => {
@@ -201,12 +228,16 @@ let buildComponent = (component, subComponent = null) => {
                         if (err) {
                             reject(err);
                         } else {
-                            resolve(states);
+                            resolve();
                         }
                     });
                 }));
 
-                return Promise.all(writePromises).then(() => states);
+                return Promise.all(writePromises).then((ffff) => {
+                    console.warn(ffff);
+
+                    return states;
+                });
             })
             .then((states) => {
                 let dependencies = [];
