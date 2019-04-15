@@ -1,49 +1,24 @@
-const {Task} = require('../Task');
-const {State} = require('../State');
 const path = require('path');
 const {stat} = require('fs');
 const requireUncached = require('require-uncached');
 const ModuleDeps = require('module-deps');
 
-class TaskTwigData extends Task {
+class ContextResolver {
     /**
-     * @param {string} name
-     * @param {*} config
+     * @param {string} file
      */
-    constructor(name, config) {
-        super(name);
-
-        /**
-         * @type {*}
-         * @private
-         */
-        this._config = config;
+    constructor(file) {
+        this._file = file;
     }
 
     /**
-     * @param {State} state
+     * @returns {Promise<*>}
      */
-    run(state) {
-        let file = path.resolve(this._config.path);
+    getContext() {
+        let file = this._file;
 
-        return Promise.all([
-            this.getDataDependencies(file),
-            this.getData(file)
-        ]).then(([dependencies, data]) => {
-            return [
-                new State('data', state.data, state.map, dependencies)
-            ];
-        });
-    }
-
-    /**
-     *
-     * @param file
-     * @returns {Promise.<{}>}
-     */
-    getData(file) {
         return new Promise((resolve, reject) => {
-            stat(file, (err, stats) => {
+            stat(file, (err) => {
                 if (err) {
                     resolve(null);
                 } else {
@@ -52,6 +27,8 @@ class TaskTwigData extends Task {
                     try {
                         data = requireUncached(file)(requireUncached);
                     } catch (err) {
+                        console.warn(err);
+
                         reject({
                             file: file,
                             message: err
@@ -68,7 +45,12 @@ class TaskTwigData extends Task {
         });
     }
 
-    getDataDependencies(file) {
+    /**
+     * @returns {Promise<Array<string>>}
+     */
+    getDependencies() {
+        let file = this._file;
+
         return new Promise((resolve, reject) => {
             let depper = ModuleDeps({ignoreMissing: true});
 
@@ -98,7 +80,7 @@ class TaskTwigData extends Task {
                     ];
 
                     for (let candidate of candidates) {
-                        dependencies.push(path.resolve(parent.basedir, candidate));
+                        dependencies.push(path.l(parent.basedir, candidate));
                     }
                 } else {
                     dependencies.push(path.resolve(parent.basedir, id));
@@ -121,4 +103,4 @@ class TaskTwigData extends Task {
     };
 }
 
-exports.TaskTwigData = TaskTwigData;
+exports.ContextResolver = ContextResolver;

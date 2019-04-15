@@ -1,6 +1,5 @@
 @import "../../../node_modules/rtl-sass/src/border";
 
-div {
+.skethemon--Field--field {
     @include rtl-sass-border-left(solid 5px red);
-    height: 500px;
 }

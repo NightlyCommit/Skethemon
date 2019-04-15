@@ -4,7 +4,6 @@ const {State} = require('../State');
 
 /**
  * @class
- * @implements IterableIterator
  */
 class ComponentFilesystem extends Component {
     constructor(name, path) {
@@ -43,7 +42,7 @@ class ComponentFilesystem extends Component {
                     reject(err);
                 }
                 else {
-                    resolve(new State(this.path, data, null, [this.path]));
+                    resolve(new State(this.path, data, null));
                 }
             });
         });

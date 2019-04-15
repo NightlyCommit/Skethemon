@@ -19,7 +19,7 @@ class Task {
     run(state) {
         return new Promise((resolve) => {
             resolve([
-                new State(this.name, state.data, null, [])
+                new State(this.name, state.data, null)
             ]);
         })
     }

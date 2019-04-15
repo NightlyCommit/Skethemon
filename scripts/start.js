@@ -5,14 +5,14 @@ const {Job} = require('./lib/Job');
 const {TaskTwing} = require('./lib/Task/Twing');
 const {TaskSass} = require('./lib/Task/Sass');
 const {TaskBrowserify} = require('./lib/Task/Browserify');
-const {TaskTwigData} = require('./lib/Task/TwigData');
 const {outputFile, copy} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
 const {join, dirname, resolve} = require('path');
 const {Logger} = require('eazy-logger');
 const {Gaze} = require('gaze');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing');
-const util = require('util');
+const {ContextResolver} = require('./lib/ContextResolver');
+const {TwingExtensionDrupal} = require('./lib/Twing/Extension/Drupal');
 
 let logger = new Logger({});
 
@@ -42,6 +42,11 @@ let app2 = new ComponentCompound('Field/field', [
     new ComponentFilesystem('js', 'test/Field/field/demo.js'),
 ]);
 
+/**
+ * @type {Map<Component, string[]>}
+ */
+let dataDependencies = new Map();
+
 let jobDefinitions = new Map([
     ['twig', {
         /**
@@ -55,9 +60,6 @@ let jobDefinitions = new Map([
             filesystemLoader.addPath('test', 'Test');
 
             return new Job('Twig', [
-                new TaskTwigData('data', {
-                    path: join(dirname(component.path), 'data.js')
-                }),
                 new TaskTwing('render', {
                     file: component.path,
                     loader: new TwingLoaderChain([
@@ -65,23 +67,28 @@ let jobDefinitions = new Map([
                         new TwingLoaderRelativeFilesystem(),
                     ]),
                     extensions: new Map([
-                        ['debug', new TwingExtensionDebug()]
+                        ['debug', new TwingExtensionDebug()],
+                        ['drupal', new TwingExtensionDrupal()]
                     ]),
                     options: {
                         cache: join('tmp/twig', component.path),
                         debug: true,
                         auto_reload: true,
-                        source_map: true
+                        source_map: true,
+                        autoescape: false
                     },
-                    context: ((file) => {
-                        let data = {
-                            a: 1
-                        };
+                    context_provider: ((file) => {
+                        let contextResolver = new ContextResolver(file);
 
-                        let dependencies = [];
+                        return Promise.all([
+                            contextResolver.getDependencies(),
+                            contextResolver.getContext()
+                        ]).then(([dependencies, context]) => {
+                            dataDependencies.set(component, dependencies);
 
-                        return [data, dependencies];
-                    })(join(dirname(component.path), 'data.js'))
+                            return context;
+                        });
+                    })(resolve(join(dirname(component.path), 'data.js')))
                 })
             ])
         },
@@ -211,6 +218,12 @@ let buildComponent = (component, subComponent = null) => {
                     for (let source of mapObject.sources) {
                         dependencies.push(source);
                     }
+                }
+
+                let componentContextSources = dataDependencies.has(subComponent) ? dataDependencies.get(subComponent) : [];
+
+                for (let contextSource of componentContextSources) {
+                    dependencies.push(contextSource);
                 }
 
                 watcher = new Gaze(dependencies).on('changed', () => {

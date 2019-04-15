@@ -8,7 +8,7 @@ const {TwingEnvironment, TwingLoaderArray, TwingLoaderChain} = require('twing');
  * @property {TwingLoaderInterface} loader
  * @property {TwingEnvironmentOptions | null} options
  * @property {Map<string, TwingExtensionInterface> | null} extensions
- * @property {*} context
+ * @property {Promise<*>} context_provider
  */
 class TaskTwing extends Task {
     /**
@@ -22,31 +22,36 @@ class TaskTwing extends Task {
          * @type {TaskTwingConfiguration}
          * @private
          */
-        this._config = config;
+        this._config = Object.assign({}, {
+            context_provider: Promise.resolve()
+        }, config);
     }
 
     /**
      * @param {State} state
      */
     run(state) {
-        let loader = new TwingLoaderChain([
-            this._config.loader,
-            new TwingLoaderArray(new Map([[
-                this._config.file, state.data
-            ]]))
-        ]);
+        return this._config.context_provider
+            .then((context) => {
+                let loader = new TwingLoaderChain([
+                    this._config.loader,
+                    new TwingLoaderArray(new Map([[
+                        this._config.file, state.data
+                    ]]))
+                ]);
 
-        let env = new TwingEnvironment(loader, this._config.options);
+                let env = new TwingEnvironment(loader, this._config.options);
 
-        for (let [name, extension] of this._config.extensions) {
-            env.addExtension(extension, name);
-        }
+                for (let [name, extension] of this._config.extensions) {
+                    env.addExtension(extension, name);
+                }
 
-        let render = env.render(this._config.file, this._config.context);
+                let render = env.render(this._config.file, context);
 
-        return Promise.resolve([
-            new State(this.name, render, Buffer.from(env.getSourceMap()))
-        ])
+                return [
+                    new State(this.name, render, Buffer.from(env.getSourceMap()))
+                ];
+            });
     }
 }
 

@@ -1,19 +1,16 @@
 /**
  * @class
- * @implements IterableIterator
  */
 class State {
     /**
      * @param {string} name
      * @param {*} data
      * @param {Buffer} map
-     * @param {string[]} dependencies
      */
-    constructor(name, data, map = null, dependencies = []) {
+    constructor(name, data, map = null) {
         this._name = name;
         this._data = data;
         this._map = map;
-        this._dependencies = dependencies;
     }
 
     get name() {
@@ -26,10 +23,6 @@ class State {
 
     get map() {
         return this._map;
-    }
-
-    get dependencies() {
-        return this._dependencies;
     }
 }
 

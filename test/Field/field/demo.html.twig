@@ -1,14 +1,13 @@
 {% extends "@Test/demo.html.twig" %}
 
 {% block body %}
-    <div class="demo--Field--field">
+    <div class="demo--title">{{ title }}</div>
+    <div class="demo--content">
         {% for testCase in testCases %}
             <div class="test-case">
-                <div class="test-case-title">
-                    {{ testCase.title }}
-                </div>
-                <div class="test-case-content">
-                    {% include "@Src/Field/field/index.html.twig" with testCase.data %}
+                <header>{{ testCase.title }}</header>
+                <div class="content">
+                    {% include "@Test/Field/field/test.html.twig" with testCase.data %}
                     {#{% include "../../../src/Field/field.html.twig" %}#}
                 </div>
             </div>

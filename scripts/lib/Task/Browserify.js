@@ -48,7 +48,7 @@ class TaskBrowserify extends Task {
                     /**
                      * @type {Converter}
                      */
-                    let map = fromSource(buffer.toString());
+                    let map = fromSource(js);
 
                     if (map) {
                         let sources = [];
@@ -62,9 +62,9 @@ class TaskBrowserify extends Task {
                         js = removeComments(js) + map.toComment();
                     }
 
-                    let state = new State(this.name, js, Buffer.from(map.toJSON()));
-
-                    resolve([state]);
+                    resolve([
+                        new State(this.name, js, map ? Buffer.from(map.toJSON()) : null)
+                    ]);
                 })
             ;
         });

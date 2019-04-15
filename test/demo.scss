@@ -1,3 +1,39 @@
 .demo {
-  background-color: brown;
+    padding: 0;
+    margin: 0;
+
+    &--title {
+        font-size: 3.0em;
+        font-family: monospace;
+        background-color: #333333;
+        color: whitesmoke;
+        padding: 8px;
+
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    &--content {
+        padding: 1.0em;
+
+        .test-case {
+            border-color: #e5e5e5;
+            border-top-style: solid;
+            border-right-style: solid;
+            border-bottom-style: solid;
+            border-left-style: solid;
+            border-width: 1px;
+            margin-bottom: 20px;
+
+            > header {
+                padding: 10px;
+                border-bottom: solid 1px #e5e5e5;
+                font-family: monospace;
+                font-weight: bold;
+                font-size: 1.5em;
+                background-color: #fbf9f9;
+            }
+        }
+    }
 }
