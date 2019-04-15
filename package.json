@@ -17,6 +17,7 @@
     "browser-sync": "^2.26.3",
     "browserify": "^16.2.3",
     "convert-source-map": "^1.6.0",
+    "css-source-map-rebase": "^3.0.0",
     "drupal-attribute": "^1.0.2",
     "eazy-logger": "^3.0.2",
     "exorcist": "^1.0.1",

@@ -1,18 +1,19 @@
-const {Component} = require('./lib/Component');
-const {ComponentFilesystem} = require('./lib/Component/Filesystem');
-const {ComponentCompound} = require('./lib/Component/Compound');
-const {Job} = require('./lib/Job');
-const {TaskTwing} = require('./lib/Task/Twing');
-const {TaskSass} = require('./lib/Task/Sass');
-const {TaskBrowserify} = require('./lib/Task/Browserify');
+const {Component} = require('../lib/Component');
+const {ComponentFilesystem} = require('../lib/Component/Filesystem');
+const {ComponentCompound} = require('../lib/Component/Compound');
+const {Job} = require('../lib/Job');
+const {TaskTwing} = require('../lib/Task/Twing');
+const {TaskSass} = require('../lib/Task/Sass');
+const {TaskCssRebase} = require('../lib/Task/CssRebase');
+const {TaskBrowserify} = require('../lib/Task/Browserify');
 const {outputFile, copy} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
 const {join, dirname, resolve} = require('path');
 const {Logger} = require('eazy-logger');
 const {Gaze} = require('gaze');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing');
-const {ContextResolver} = require('./lib/ContextResolver');
-const {TwingExtensionDrupal} = require('./lib/Twing/Extension/Drupal');
+const {ContextResolver} = require('../lib/ContextResolver');
+const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
 
 let logger = new Logger({});
 
@@ -106,7 +107,8 @@ let jobDefinitions = new Map([
                 outFile: 'index.css',
                 sourceMap: true,
                 sourceMapEmbed: true
-            })
+            }),
+            new TaskCssRebase()
         ]),
         output: 'index.css'
     }],
