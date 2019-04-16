@@ -1,0 +1,26 @@
+{#
+/**
+ * @file
+ *
+ * Template for a Field/field test.
+ *
+ * @see src/Field/field/index.html.twig
+ */
+#}
+{% set safeItems = [] %}
+
+{% for item in items %}
+    {% if (item.attributes is not defined) %}
+        {% set item = item|merge({
+            attributes: drupal_attribute()
+        }) %}
+    {% endif %}
+
+    {% set safeItems = safeItems|merge([item]) %}
+{% endfor %}
+
+{% include "../../../src/Field/field/index.html.twig" with {
+    attributes: (attributes is not defined) ? drupal_attribute() : attributes,
+    title_attributes: (title_attributes is not defined) ? drupal_attribute() : title_attributes,
+    items: safeItems
+} %}

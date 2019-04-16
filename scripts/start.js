@@ -1,4 +1,5 @@
 const {Component} = require('../lib/Component');
+const {ComponentDemo} = require('../lib/Component/Demo');
 const {ComponentFilesystem} = require('../lib/Component/Filesystem');
 const {ComponentCompound} = require('../lib/Component/Compound');
 const {Job} = require('../lib/Job');
@@ -8,47 +9,46 @@ const {TaskCssRebase} = require('../lib/Task/CssRebase');
 const {TaskBrowserify} = require('../lib/Task/Browserify');
 const {outputFile, copy} = require('fs-extra');
 const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
-const {join, dirname, resolve} = require('path');
+const {join, dirname, resolve, relative} = require('path');
 const {Logger} = require('eazy-logger');
 const {Gaze} = require('gaze');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing');
 const {ContextResolver} = require('../lib/ContextResolver');
 const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
+const {Resource, ResourceType} = require('../lib/Resource');
+const rimraf = require('rimraf');
 
 let logger = new Logger({});
 
 /**
  * @type {ComponentCompound}
  */
-let app = new ComponentCompound('App', [
-    new ComponentCompound('Field', [
-        new ComponentCompound('field', [
-            new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
-            new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
-            new ComponentFilesystem('js', 'test/Field/field/demo.js'),
-        ]),
-        new ComponentCompound('Formatter', [
-            new ComponentCompound('image-formatter', [
-                new ComponentFilesystem('twig', 'test/Field/Formatter/image-formatter/demo.html.twig'),
-                new ComponentFilesystem('sass', 'test/Field/Formatter/image-formatter/demo.scss'),
-                new ComponentFilesystem('js', 'test/Field/Formatter/image-formatter/demo.js'),
-            ])
-        ])
-    ])
-]);
-
+// let app = new ComponentCompound('App', [
+//     new ComponentCompound('Field', [
+//         new ComponentCompound('field', [
+//             new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
+//             new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
+//             new ComponentFilesystem('js', 'test/Field/field/demo.js'),
+//         ]),
+//         new ComponentCompound('Formatter', [
+//             new ComponentCompound('image-formatter', [
+//                 new ComponentFilesystem('twig', 'test/Field/Formatter/image-formatter/demo.html.twig'),
+//                 new ComponentFilesystem('sass', 'test/Field/Formatter/image-formatter/demo.scss'),
+//                 new ComponentFilesystem('js', 'test/Field/Formatter/image-formatter/demo.js'),
+//             ])
+//         ])
+//     ])
+// ]);
 let app2 = new ComponentCompound('Field/field', [
-    new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
-    new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
-    new ComponentFilesystem('js', 'test/Field/field/demo.js'),
+    new ComponentDemo('twig', 'lib/templates/demo.html.twig.twig'),
+    new ComponentDemo('sass', 'lib/templates/demo.scss.twig'),
+    new ComponentDemo('js', 'lib/templates/demo.js.twig'),
 ]);
 
 /**
- * @type {Map<Component, string[]>}
+ * @type {Map<Component, Resource[]>}
  */
-let dataDependencies = new Map();
-
-let assets = new Map();
+let resources = new Map();
 
 let jobDefinitions = new Map([
     ['twig', {
@@ -74,7 +74,7 @@ let jobDefinitions = new Map([
                         ['drupal', new TwingExtensionDrupal()]
                     ]),
                     environment_options: {
-                        cache: join('tmp/twig', component.path),
+                        cache: join('tmp/twig', 'Field/field'),
                         debug: true,
                         auto_reload: true,
                         source_map: true,
@@ -84,14 +84,24 @@ let jobDefinitions = new Map([
                         let contextResolver = new ContextResolver(file);
 
                         return Promise.all([
-                            contextResolver.getDependencies(),
+                            contextResolver.getSources(),
                             contextResolver.getContext()
-                        ]).then(([dependencies, context]) => {
-                            dataDependencies.set(component, dependencies);
+                        ]).then(([sources, context]) => {
+                            let componentResources = resources.has(component) ? resources.get(component) : [];
 
-                            return context;
+                            for (let source of sources) {
+                                let resource = new Resource(relative('.', source), ResourceType.WATCH);
+
+                                componentResources.push(resource);
+                            }
+
+                            resources.set(component, componentResources);
+
+                            return {
+                                test_cases: context
+                            };
                         });
-                    })(resolve(join(dirname(component.path), 'data.js')))
+                    })(resolve(join('test/Field/field', 'test_cases.js')))
                 })
             ])
         },
@@ -113,12 +123,11 @@ let jobDefinitions = new Map([
             new TaskCssRebase('rebase', {
                 rebase: (obj, done) => {
                     let resolved = obj.resolved;
+                    let componentResources = resources.has(component) ? resources.get(component) : [];
 
-                    let componentAssets = assets.has(component) ? assets.get(component) : [];
+                    componentResources.push(new Resource(resolved.path));
 
-                    componentAssets.push(resolved.path);
-
-                    assets.set(component, componentAssets);
+                    resources.set(component, componentResources);
 
                     done();
                 }
@@ -152,18 +161,17 @@ let watchers = new Map();
  */
 let buildComponent = (component, subComponent = null) => {
     if (!subComponent) {
-        let promises = [];
+        return new Promise((resolve) => {
+            rimraf(join('www', component.name), () => {
+                let promises = [];
 
-        for (let subComponent of component) {
-            promises.push(buildComponent(component, subComponent));
-        }
+                for (let subComponent of component) {
+                    promises.push(buildComponent(component, subComponent));
+                }
 
-        return Promise.all(promises);
-
-        // return component.initialState()
-        //     .then((state) => {
-        //         console.warn(util.inspect(component, {depth: null}));
-        //     });
+                resolve(Promise.all(promises));
+            });
+        });
     } else {
         /**
          * @type {Gaze}
@@ -193,6 +201,10 @@ let buildComponent = (component, subComponent = null) => {
             .then((states) => {
                 let writePromises = [];
 
+                /**
+                 * @type {Array<Resource>}
+                 */
+                let componentResources = resources.has(subComponent) ? resources.get(subComponent) : [];
                 let state = states[states.length - 1];
                 let map = state.map;
 
@@ -200,27 +212,22 @@ let buildComponent = (component, subComponent = null) => {
                     let mapObject = JSON.parse(map.toString());
 
                     for (let source of mapObject.sources) {
-                        let dest = join('www', component.name, source);
-
-                        writePromises.push(new Promise((resolve, reject) => {
-                            copy(source, dest, (err) => {
-                                resolve(source);
-                            });
-                        }));
+                        componentResources.push(new Resource(source));
                     }
                 }
 
-                // ...
-                let componentAssets = assets.has(subComponent) ? assets.get(subComponent) : [];
+                resources.set(subComponent, componentResources);
 
-                for (let source of componentAssets) {
-                    let dest = join('www', component.name, source);
+                for (let resource of componentResources) {
+                    if (resource.type & ResourceType.COPY) {
+                        let dest = join('www', component.name, resource.source);
 
-                    writePromises.push(new Promise((resolve, reject) => {
-                        copy(source, dest, (err) => {
-                            resolve(source);
-                        });
-                    }));
+                        writePromises.push(new Promise((resolve) => {
+                            copy(resource.source, dest, () => {
+                                resolve();
+                            });
+                        }));
+                    }
                 }
 
                 writePromises.push(new Promise((resolve, reject) => {
@@ -233,33 +240,19 @@ let buildComponent = (component, subComponent = null) => {
                     });
                 }));
 
-                return Promise.all(writePromises).then((ffff) => {
-                    console.warn(ffff);
-
+                return Promise.all(writePromises).then(() => {
                     return states;
                 });
             })
-            .then((states) => {
-                let dependencies = [];
+            .then(() => {
+                /**
+                 * @type {Array<Resource>}
+                 */
+                let componentResources = resources.has(subComponent) ? resources.get(subComponent) : [];
 
-                let state = states[states.length - 1];
-                let map = state.map;
+                let sourcesToWatch = componentResources.map((resource) => resource.source);
 
-                if (map) {
-                    let mapObject = JSON.parse(map.toString());
-
-                    for (let source of mapObject.sources) {
-                        dependencies.push(source);
-                    }
-                }
-
-                let componentContextSources = dataDependencies.has(subComponent) ? dataDependencies.get(subComponent) : [];
-
-                for (let contextSource of componentContextSources) {
-                    dependencies.push(contextSource);
-                }
-
-                watcher = new Gaze(dependencies).on('changed', () => {
+                watcher = new Gaze(sourcesToWatch).on('changed', () => {
                     buildComponent(component, subComponent)
                         .then(() => {
                             let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
@@ -296,7 +289,6 @@ for (let component of [app2]) {
             if (err) {
                 reject(err);
             } else {
-
                 let urls = bs.options.get("urls");
 
                 let maxLength = 0;
