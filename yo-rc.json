@@ -1,0 +1,10 @@
+{
+  "skethemon": {
+    "src": {
+      "root": "src"
+    },
+    "test": {
+      "root": "test"
+    }
+  }
+}

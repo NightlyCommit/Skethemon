@@ -1,6 +1,6 @@
 const {ComponentFilesystem} = require('./Filesystem');
 const {State} = require('../State');
-const {TwingEnvironment, TwingLoaderFilesystem} = require('twing');
+const {TwingEnvironment, TwingLoaderFilesystem} = require('twing/index');
 
 class ComponentDemo extends ComponentFilesystem {
     initialState() {

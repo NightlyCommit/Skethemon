@@ -1,0 +1,5 @@
+@import "./mixins";
+
+.foo {
+    @include foo;
+}

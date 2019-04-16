@@ -4,7 +4,11 @@
   "description": "Skethemon",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "node tools/scripts/post-install.js",
+    "start": "node tools/scripts/start.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "yo:component": "yo ./tools/generator/component",
+    "yo:test": "yo ./tools/generator/test"
   },
   "keywords": [],
   "author": "Eric MORAND <eric.morand@gmail.com> (https://github.com/ericmorand)",
@@ -16,6 +20,7 @@
   "devDependencies": {
     "browser-sync": "^2.26.3",
     "browserify": "^16.2.3",
+    "chalk": "^2.4.2",
     "convert-source-map": "^1.6.0",
     "css-source-map-rebase": "^3.0.0",
     "drupal-attribute": "^1.0.2",
@@ -28,6 +33,11 @@
     "require-uncached": "^2.0.0",
     "rimraf": "^2.6.3",
     "rtl-sass": "^1.5.0",
-    "source-map": "^0.7.3"
+    "slash": "^2.0.0",
+    "source-map": "^0.7.3",
+    "speakingurl": "^14.0.1",
+    "yeoman-generator": "^3.2.0",
+    "yo": "^2.0.6",
+    "yosay": "^2.0.2"
   }
 }

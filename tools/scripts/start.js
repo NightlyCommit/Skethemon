@@ -12,7 +12,7 @@ const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = re
 const {join, dirname, resolve, relative} = require('path');
 const {Logger} = require('eazy-logger');
 const {Gaze} = require('gaze');
-const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing');
+const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing/index');
 const {ContextResolver} = require('../lib/ContextResolver');
 const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
 const {Resource, ResourceType} = require('../lib/Resource');
@@ -40,9 +40,9 @@ let logger = new Logger({});
 //     ])
 // ]);
 let app2 = new ComponentCompound('Field/field', [
-    new ComponentDemo('twig', 'lib/templates/demo.html.twig.twig'),
-    new ComponentDemo('sass', 'lib/templates/demo.scss.twig'),
-    new ComponentDemo('js', 'lib/templates/demo.js.twig'),
+    new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
+    new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
+    new ComponentDemo('js', 'tools/templates/demo.js.twig'),
 ]);
 
 /**
