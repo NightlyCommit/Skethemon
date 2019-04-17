@@ -31,10 +31,10 @@ class StateCompound extends State {
 
     /**
      * @param name
-     * @returns {*}
+     * @returns {State}
      */
-    getComponent(name) {
-        return this._components.has(name) ? this._components.get(name) : null;
+    getState(name) {
+        return this._states.has(name) ? this._states.get(name) : null;
     }
 
     /**

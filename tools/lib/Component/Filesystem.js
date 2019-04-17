@@ -26,7 +26,7 @@ class ComponentFilesystem extends Component {
                     reject(err);
                 }
                 else {
-                    resolve(new State(this.path, data, null));
+                    resolve(new State(this.name, data, null));
                 }
             });
         });

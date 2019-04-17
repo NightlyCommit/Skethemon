@@ -11,11 +11,11 @@ class ComponentDemo extends ComponentFilesystem {
         });
 
         let data = env.render(this.path, {
-            name: 'Field/field',
-            title: 'Field/field'
+            name: this.parent.fqn,
+            title: this.parent.fqn
         });
 
-        return Promise.resolve(new State(this.path, data, null));
+        return Promise.resolve(new State(this.name, data, null));
     }
 }
 

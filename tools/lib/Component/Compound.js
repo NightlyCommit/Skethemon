@@ -19,6 +19,8 @@ class ComponentCompound extends Component {
         this._components = new Map();
 
         for (let component of components) {
+            component.parent = this;
+
             this._components.set(component.name, component);
         }
     }

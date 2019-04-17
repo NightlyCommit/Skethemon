@@ -17,28 +17,30 @@ const {ContextResolver} = require('../lib/ContextResolver');
 const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
 const {Resource, ResourceType} = require('../lib/Resource');
 const rimraf = require('rimraf');
+const {inspect} = require('util');
 
 let logger = new Logger({});
 
 /**
  * @type {ComponentCompound}
  */
-// let app = new ComponentCompound('App', [
-//     new ComponentCompound('Field', [
-//         new ComponentCompound('field', [
-//             new ComponentFilesystem('twig', 'test/Field/field/demo.html.twig'),
-//             new ComponentFilesystem('sass', 'test/Field/field/demo.scss'),
-//             new ComponentFilesystem('js', 'test/Field/field/demo.js'),
-//         ]),
-//         new ComponentCompound('Formatter', [
-//             new ComponentCompound('image-formatter', [
-//                 new ComponentFilesystem('twig', 'test/Field/Formatter/image-formatter/demo.html.twig'),
-//                 new ComponentFilesystem('sass', 'test/Field/Formatter/image-formatter/demo.scss'),
-//                 new ComponentFilesystem('js', 'test/Field/Formatter/image-formatter/demo.js'),
-//             ])
-//         ])
-//     ])
-// ]);
+let app = new ComponentCompound('', [
+    new ComponentCompound('Field', [
+        new ComponentCompound('field', [
+            new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
+            new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
+            new ComponentDemo('js', 'tools/templates/demo.js.twig'),
+        ]),
+        new ComponentCompound('Formatter', [
+            new ComponentCompound('image-formatter', [
+                new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
+                new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
+                new ComponentDemo('js', 'tools/templates/demo.js.twig'),
+            ])
+        ])
+    ])
+]);
+
 let app2 = new ComponentCompound('Field/field', [
     new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
     new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
@@ -270,10 +272,133 @@ let buildComponent = (component, subComponent = null) => {
     }
 };
 
+/**
+ * @param {ComponentCompound} component
+ */
+let buildABetterComponent = (component) => {
+    let www = join('www', component.parent.fqn);
+
+    return new Promise((resolve) => {
+        rimraf(www, () => {
+            let promises = [];
+
+            for (let child of component) {
+                promises.push(buildABetterComponent(child));
+            }
+
+            return Promise.all(promises)
+                .then((results) => {
+                    console.warn('WE BUILD ' + component.fqn);
+
+                    /**
+                     * @type {Gaze}
+                     */
+                    let watcher;
+
+                    if (watchers.has(component)) {
+                        watcher = watchers.get(component);
+                    }
+
+                    if (watcher) {
+                        watcher.close();
+                    }
+
+                    let jobDefinition = jobDefinitions.get(component.name);
+
+                    if (jobDefinition) {
+                        let job = jobDefinition.jobFactory(component);
+                        let output = jobDefinition.output;
+
+                        return component.initialState()
+                            .then((state) => {
+                                return job.run(state)
+                                    .then((states) => {
+                                        return [state].concat(states);
+                                    })
+                            })
+                            .then((states) => {
+                                let writePromises = [];
+
+                                console.warn('LET US WRITE TO', www);
+
+                                /**
+                                 * @type {Array<Resource>}
+                                 */
+                                let componentResources = resources.has(component) ? resources.get(component) : [];
+                                let state = states[states.length - 1];
+                                let map = state.map;
+
+                                if (map) {
+                                    let mapObject = JSON.parse(map.toString());
+
+                                    for (let source of mapObject.sources) {
+                                        componentResources.push(new Resource(source));
+                                    }
+                                }
+
+                                resources.set(component, componentResources);
+
+                                for (let resource of componentResources) {
+                                    if (resource.type & ResourceType.COPY) {
+                                        let dest = join(www, resource.source);
+
+                                        writePromises.push(new Promise((resolve) => {
+                                            copy(resource.source, dest, () => {
+                                                resolve();
+                                            });
+                                        }));
+                                    }
+                                }
+
+                                writePromises.push(new Promise((resolve, reject) => {
+                                    outputFile(join(www, output), state.data, (err) => {
+                                        if (err) {
+                                            reject(err);
+                                        } else {
+                                            resolve();
+                                        }
+                                    });
+                                }));
+
+                                return Promise.all(writePromises).then(() => {
+                                    return states;
+                                });
+                            })
+                            .then(() => {
+                                /**
+                                 * @type {Array<Resource>}
+                                 */
+                                let componentResources = resources.has(component) ? resources.get(component) : [];
+
+                                let sourcesToWatch = componentResources.map((resource) => resource.source);
+
+                                watcher = new Gaze(sourcesToWatch).on('changed', () => {
+                                    buildABetterComponent(component)
+                                        .then(() => {
+                                            let bs = hasBrowserSync(component.parent.fqn) ? getBrowserSync(component.parent.fqn) : null;
+
+                                            if (bs) {
+                                                logger.unprefixed('info', 'Reloading ' + output);
+
+                                                bs.reload(output);
+                                            }
+                                        });
+                                });
+
+                                watchers.set(component, watcher);
+                            });
+                    } else {
+                        return Promise.resolve();
+                    }
+                });
+        });
+    });
+};
+
 let initPromises = [];
 
-for (let component of [app2]) {
-    let componentName = component.name;
+for (let component of [app.getComponent('Field').getComponent('field')]) {
+    let componentName = component.fqn;
 
     let browserSync = createBrowserSync(componentName);
     let browserSyncConfig = {
@@ -283,6 +408,8 @@ for (let component of [app2]) {
         notify: false,
         logLevel: 'silent'
     };
+
+    console.warn(browserSyncConfig);
 
     let browserSyncInit = () => new Promise((resolve, reject) => {
         browserSync.init(browserSyncConfig, (err, bs) => {
@@ -309,7 +436,7 @@ for (let component of [app2]) {
                 resolve(bs);
             }
         });
-    }).then(() => buildComponent(component));
+    }).then(() => buildABetterComponent(component));
 
     initPromises.push(browserSyncInit);
 }
