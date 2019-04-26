@@ -6,6 +6,10 @@ const {resolve: pathResolve} = require('path');
  * @class
  */
 class ComponentSass extends ComponentFilesystem {
+    constructor(path) {
+        super('', path);
+    }
+
     /**
      * @param {string|null} name
      * @returns {Promise<State>}

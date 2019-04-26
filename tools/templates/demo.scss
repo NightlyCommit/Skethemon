@@ -1,5 +1,3 @@
-@import "../../test/{{ name }}/index";
-
 .demo {
     padding: 0;
     margin: 0;
@@ -19,21 +17,28 @@
     &--content {
         padding: 1.0em;
 
-        .test-case {
+        .demo--test,
+        .demo--test--case {
+            > header {
+                padding: 10px;
+                font-family: monospace;
+                font-weight: bold;
+                font-size: 1.5em;
+                border-bottom: solid 5px #e5e5e5;
+            }
+        }
+
+        .demo--test--case {
             border-color: #e5e5e5;
             border-top-style: solid;
             border-right-style: solid;
             border-bottom-style: solid;
             border-left-style: solid;
             border-width: 1px;
-            margin-bottom: 20px;
+            margin-top: 1em;
 
             > header {
-                padding: 10px;
                 border-bottom: solid 1px #e5e5e5;
-                font-family: monospace;
-                font-weight: bold;
-                font-size: 1.5em;
                 background-color: #fbf9f9;
             }
         }

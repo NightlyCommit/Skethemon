@@ -8,8 +8,8 @@ const requireUncached = require('require-uncached');
  * @class
  */
 class ComponentTwig extends ComponentFilesystem {
-    constructor(name, path, dataModulePath) {
-        super(name, path);
+    constructor(path, dataModulePath) {
+        super(null, path);
 
         this._dataModulePath = dataModulePath;
     }

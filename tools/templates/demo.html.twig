@@ -3,7 +3,7 @@
 {% macro render(test) %}
     {% import _self as self %}
 
-    {% if test.children %}
+    {% if test.children|length %}
         {% for name, child in test.children %}
             {{ self.render(child) }}
         {% endfor %}
