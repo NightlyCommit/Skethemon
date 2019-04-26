@@ -30,7 +30,7 @@ class TaskTwing extends Task {
     /**
      * @param {State} state
      */
-    run(state) {
+    run(state, data) {
         return this._config.context_provider
             .then((context) => {
                 let loader = new TwingLoaderChain([
@@ -46,11 +46,9 @@ class TaskTwing extends Task {
                     env.addExtension(extension, name);
                 }
 
-                let render = env.render(this._config.file, context);
+                let render = env.render(this._config.file, data);
 
-                return [
-                    new State(this.name, render, Buffer.from(env.getSourceMap()))
-                ];
+                return new State(this.name, render, Buffer.from(env.getSourceMap()));
             });
     }
 }

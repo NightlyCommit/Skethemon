@@ -4,8 +4,25 @@
  *
  * Template for a Field/Formatter/image-formatter test.
  *
+ * Available variables:
+ *  - image: The image to format. Contains the following properties:
+ *    - url: The URL of the image as plain text.
+ *    - alt: The alternate text of the image as plain text.
+ *    - title: The title of the image as plain text.
+ *  - default_image_width: The width of the default image as an integer.
+ *  - default_image_height: The height of the default image as an integer.
+ *
  * @see src/Field/Formatter/image-formatter/index.html.twig
  */
 #}
 
-{% include "../../../../src/Field/Formatter/image-formatter/index.html.twig" %}
+{% set defaultImageTitle = 'A man typing text on a laptop' %}
+
+{% set image %}
+    <img src="{{ image.url|default('https://picsum.photos/id/1/' ~ default_image_width|default(300) ~ '/' ~ default_image_height|default(300)) }}" alt="{{ image.alt|default(defaultImageTitle) }}" title="{{ image.title|default(defaultImageTitle) }}">
+{% endset %}
+
+{% include "@Src/Field/Formatter/image-formatter/index.html.twig" with {
+    image: image,
+    url: url
+} only %}

@@ -1,28 +1,43 @@
-{% verbatim %}
-{% set timestamp = 'now'|date('U') %}
-{% endverbatim %}
+{% import _self as self %}
+
+{% macro render(test) %}
+    {% import _self as self %}
+
+    {% if test.children %}
+        {% for name, child in test.children %}
+            {{ self.render(child) }}
+        {% endfor %}
+    {% else %}
+        <div class="demo--test">
+            <header>{{ test.title }}</header>
+            <div class="demo--test--cases">
+                {% for case in test.cases %}
+                    <div class="demo--test--case">
+                        <header>
+                            {{ case.title }}
+                        </header>
+                        <div class="demo--test--case--content">
+                            {{ include(test.template, case.data) }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}
+
 <!DOCTYPE html>
-<html lang="{% verbatim %}{{ language|default('en') }}{% endverbatim %}"
-      dir="{% verbatim %}{{ direction|default('ltr') }}{% endverbatim %}">
+<html lang="{{ language|default('en') }}" dir="{{ direction|default('ltr') }}">
 <head>
     <meta charset="UTF-8">
     <title>{{ title }}</title>
-    <link rel="stylesheet" type="text/css" href="index.css?{% verbatim %}{{ timestamp }}{% endverbatim %}">
+    <link rel="stylesheet" type="text/css" href="index.css?{{ timestamp }}">
 </head>
 <body class="demo">
-<div class="demo--title">{{ name }}</div>
+<div class="demo--title">{{ title }}</div>
 <div class="demo--content">
-    {% verbatim %}{% for test_case in test_cases %}{% endverbatim %}
-    <div class="test-case">
-        <header>
-            {% verbatim %}{{ test_case.title }}{% endverbatim %}
-        </header>
-        <div class="content">
-            {% verbatim %}{% include "@Test/{% endverbatim %}{{ name }}{% verbatim %}/index.html.twig" with test_case.data %}{% endverbatim %}
-        </div>
-    </div>
-    {% verbatim %}{% endfor %}{% endverbatim %}
+    {{ self.render(test) }}
 </div>
-<script type="text/javascript" src="index.js?{% verbatim %}{{ timestamp }}{% endverbatim %}"></script>
+<script type="text/javascript" src="index.js?{{ timestamp }}"></script>
 </body>
 </html>

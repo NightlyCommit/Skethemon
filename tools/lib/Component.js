@@ -20,6 +20,12 @@ class Component {
          * @private
          */
         this._parent = null;
+
+        /**
+         * @type {State[]}
+         * @private
+         */
+        this._states = null;
     }
 
     /**
@@ -44,6 +50,20 @@ class Component {
     }
 
     /**
+     * @returns {State[]}
+     */
+    get states() {
+        return this._states;
+    }
+
+    /**
+     * @param {State[]} states
+     */
+    set states(states) {
+        this._states = states;
+    }
+
+    /**
      * @returns {string}
      */
     get fqn() {
@@ -51,14 +71,19 @@ class Component {
     }
 
     /**
+     * @param {string|null} name
      * @returns {Promise<State>}
      */
-    initialState() {
+    initialState(name = null) {
         return Promise.resolve(new State(this.name, null));
     }
 
+    data() {
+        return Promise.resolve({});
+    }
+
     /**
-     * @returns {IterableIterator<ComponentInterface>}
+     * @returns {IterableIterator<Component>}
      */
     [Symbol.iterator]() {
         return [].values();

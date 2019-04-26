@@ -1,21 +1,38 @@
 const {ComponentFilesystem} = require('./Filesystem');
-const {State} = require('../State');
-const {TwingEnvironment, TwingLoaderFilesystem} = require('twing/index');
 
 class ComponentDemo extends ComponentFilesystem {
-    initialState() {
-        let loader = new TwingLoaderFilesystem('.');
+    /**
+     * @param {string} name
+     * @param {Component} component
+     */
+    constructor(name, component) {
+        super(name, 'tools/templates/demo.html.twig.twig');
 
-        let env = new TwingEnvironment(loader, {
-            cache: false
-        });
+        /**
+         * @type {Component}
+         * @private
+         */
+        this._component = component;
+    }
 
-        let data = env.render(this.path, {
-            name: this.parent.fqn,
-            title: this.parent.fqn
-        });
+    /**
+     * @returns {Component}
+     */
+    get component() {
+        return this._component;
+    }
 
-        return Promise.resolve(new State(this.name, data, null));
+    data() {
+        return this.component.data()
+            .then((data) => {
+                return {
+                    title: this.component.fqn,
+                    timestamp: new Date().getTime(),
+                    language: 'en',
+                    direction: 'ltr',
+                    test: data
+                }
+            });
     }
 }
 

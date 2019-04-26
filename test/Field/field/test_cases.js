@@ -4,8 +4,9 @@
 module.exports = (require) => {
     return [
         {
-            title: 'Foo',
+            title: 'Test case 1',
             data: {
+                label: 'Field label',
                 items: [
                     {
                         content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. In maximus ex nec dolor ullamcorper cursus. Proin luctus leo libero, dictum finibus leo tristique a. Proin volutpat nulla in ipsum elementum, vel malesuada enim ultricies. Nunc dignissim ante ligula, sed ullamcorper eros ultrices eget. Vivamus ut elit porta, scelerisque urna tristique, sagittis tortor. Mauris molestie lacus a nibh faucibus, scelerisque sollicitudin enim ornare. Nullam condimentum lorem eu ex maximus, at interdum nisl condimentum. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Proin eu faucibus eros. Fusce convallis mattis condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque augue mauris, dignissim ac sagittis sit amet, commodo faucibus libero. Cras ullamcorper felis sit amet nunc congue consectetur.'
@@ -17,8 +18,9 @@ module.exports = (require) => {
             }
         },
         {
-            title: 'Bar',
+            title: 'Test case 2',
             data: {
+                label: 'Field label',
                 items: [
                     {
                         content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. In maximus ex nec dolor ullamcorper cursus. Proin luctus leo libero, dictum finibus leo tristique a. Proin volutpat nulla in ipsum elementum, vel malesuada enim ultricies. Nunc dignissim ante ligula, sed ullamcorper eros ultrices eget. Vivamus ut elit porta, scelerisque urna tristique, sagittis tortor. Mauris molestie lacus a nibh faucibus, scelerisque sollicitudin enim ornare. Nullam condimentum lorem eu ex maximus, at interdum nisl condimentum. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Proin eu faucibus eros. Fusce convallis mattis condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque augue mauris, dignissim ac sagittis sit amet, commodo faucibus libero. Cras ullamcorper felis sit amet nunc congue consectetur.'

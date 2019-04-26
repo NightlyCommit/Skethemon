@@ -2,6 +2,9 @@ const {Component} = require('../lib/Component');
 const {ComponentDemo} = require('../lib/Component/Demo');
 const {ComponentFilesystem} = require('../lib/Component/Filesystem');
 const {ComponentCompound} = require('../lib/Component/Compound');
+const {ComponentTwig} = require('../lib/Component/Twig');
+const {ComponentSass} = require('../lib/Component/Sass');
+const {ComponentJavaScript} = require('../lib/Component/JavaScript');
 const {Job} = require('../lib/Job');
 const {TaskTwing} = require('../lib/Task/Twing');
 const {TaskSass} = require('../lib/Task/Sass');
@@ -22,32 +25,6 @@ const {inspect} = require('util');
 let logger = new Logger({});
 
 /**
- * @type {ComponentCompound}
- */
-let app = new ComponentCompound('', [
-    new ComponentCompound('Field', [
-        new ComponentCompound('field', [
-            new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
-            new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
-            new ComponentDemo('js', 'tools/templates/demo.js.twig'),
-        ]),
-        new ComponentCompound('Formatter', [
-            new ComponentCompound('image-formatter', [
-                new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
-                new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
-                new ComponentDemo('js', 'tools/templates/demo.js.twig'),
-            ])
-        ])
-    ])
-]);
-
-let app2 = new ComponentCompound('Field/field', [
-    new ComponentDemo('twig', 'tools/templates/demo.html.twig.twig'),
-    new ComponentDemo('sass', 'tools/templates/demo.scss.twig'),
-    new ComponentDemo('js', 'tools/templates/demo.js.twig'),
-]);
-
-/**
  * @type {Map<Component, Resource[]>}
  */
 let resources = new Map();
@@ -66,7 +43,7 @@ let jobDefinitions = new Map([
 
             return new Job('Twig', [
                 new TaskTwing('render', {
-                    file: component.path,
+                    file: component.name,
                     loader: new TwingLoaderChain([
                         filesystemLoader,
                         new TwingLoaderRelativeFilesystem(),
@@ -276,17 +253,19 @@ let buildComponent = (component, subComponent = null) => {
  * @param {ComponentCompound} component
  */
 let buildABetterComponent = (component) => {
-    let www = join('www', component.parent.fqn);
+    console.warn('buildABetterComponent', component.name);
+
+    let www = join('www', component.fqn);
 
     return new Promise((resolve) => {
         rimraf(www, () => {
-            let promises = [];
+            // let promises = [];
 
-            for (let child of component) {
-                promises.push(buildABetterComponent(child));
-            }
+            // for (let child of component) {
+            //     promises.push(buildABetterComponent(child));
+            // }
 
-            return Promise.all(promises)
+            return Promise.resolve()
                 .then((results) => {
                     console.warn('WE BUILD ' + component.fqn);
 
@@ -311,10 +290,13 @@ let buildABetterComponent = (component) => {
 
                         return component.initialState()
                             .then((state) => {
-                                return job.run(state)
-                                    .then((states) => {
-                                        return [state].concat(states);
-                                    })
+                                return component.data()
+                                    .then((data) => {
+                                        return job.run(state, data)
+                                            .then((states) => {
+                                                return [state].concat(states);
+                                            })
+                                    });
                             })
                             .then((states) => {
                                 let writePromises = [];
@@ -397,7 +379,24 @@ let buildABetterComponent = (component) => {
 
 let initPromises = [];
 
-for (let component of [app.getComponent('Field').getComponent('field')]) {
+let component = new ComponentCompound('Field', [
+    new ComponentCompound('field', [
+        new ComponentTwig('twig', 'test/Field/field/index.html.twig', 'test/Field/field/test_cases.js'),
+        new ComponentSass('sass', 'test/Field/field/index.scss')
+    ]),
+    new ComponentCompound('Formatter', [
+        new ComponentCompound('image_formatter', [
+            new ComponentTwig('twig', 'test/Field/Formatter/image-formatter/index.html.twig', 'test/Field/Formatter/image-formatter/test_cases.js'),
+            new ComponentSass('sass', 'test/Field/Formatter/image-formatter/index.scss')
+        ]),
+    ])
+]);
+
+let demoComponent = new ComponentDemo('Demo', component);
+
+for (let component of [
+    demoComponent
+]) {
     let componentName = component.fqn;
 
     let browserSync = createBrowserSync(componentName);
@@ -441,4 +440,131 @@ for (let component of [app.getComponent('Field').getComponent('field')]) {
     initPromises.push(browserSyncInit);
 }
 
-initPromises.reduce((previousValue, currentValue) => previousValue.then(() => currentValue()), Promise.resolve());
+let filesystemLoader = new TwingLoaderFilesystem();
+
+filesystemLoader.addPath('src', 'Src');
+filesystemLoader.addPath('test', 'Test');
+
+let twigJob = new Job('twig', [
+    new TaskTwing('render', {
+        file: 'Field/index.html.twig', //component.name,
+        loader: new TwingLoaderChain([
+            filesystemLoader,
+            new TwingLoaderRelativeFilesystem(),
+        ]),
+        extensions: new Map([
+            ['debug', new TwingExtensionDebug()],
+            ['drupal', new TwingExtensionDrupal()]
+        ]),
+        environment_options: {
+            cache: join('tmp/twig', 'Field/field'),
+            debug: true,
+            auto_reload: true,
+            source_map: true,
+            autoescape: false
+        },
+        context_provider: ((file) => {
+            let contextResolver = new ContextResolver(file);
+
+            return Promise.all([
+                contextResolver.getSources(),
+                contextResolver.getContext()
+            ]).then(([sources, context]) => {
+                // let componentResources = resources.has(component) ? resources.get(component) : [];
+                //
+                // for (let source of sources) {
+                //     let resource = new Resource(relative('.', source), ResourceType.WATCH);
+                //
+                //     componentResources.push(resource);
+                // }
+
+                // resources.set(component, componentResources);
+
+                return {
+                    test_cases: context
+                };
+            });
+        })(resolve(join('test/Field/field', 'test_cases.js')))
+    })
+]);
+
+let job = new Job('demo', [
+    new Job('twig', [
+        new TaskTwing('render', {
+            file: 'Field/index.html.twig', //component.name,
+            loader: new TwingLoaderChain([
+                filesystemLoader,
+                new TwingLoaderRelativeFilesystem(),
+            ]),
+            extensions: new Map([
+                ['debug', new TwingExtensionDebug()],
+                ['drupal', new TwingExtensionDrupal()]
+            ]),
+            environment_options: {
+                cache: join('tmp/twig', 'Field/field'),
+                debug: true,
+                auto_reload: true,
+                source_map: true,
+                autoescape: false
+            },
+            context_provider: ((file) => {
+                let contextResolver = new ContextResolver(file);
+
+                return Promise.all([
+                    contextResolver.getSources(),
+                    contextResolver.getContext()
+                ]).then(([sources, context]) => {
+                    // let componentResources = resources.has(component) ? resources.get(component) : [];
+                    //
+                    // for (let source of sources) {
+                    //     let resource = new Resource(relative('.', source), ResourceType.WATCH);
+                    //
+                    //     componentResources.push(resource);
+                    // }
+
+                    // resources.set(component, componentResources);
+
+                    return {
+                        test_cases: context
+                    };
+                });
+            })(resolve(join('test/Field/field', 'test_cases.js')))
+        })
+    ]),
+    new Job('sass', [
+        new TaskSass('render', {
+            precision: 8,
+            file: 'index.scss', //resolve(component.path),
+            outFile: 'index.css',
+            sourceMap: true,
+            sourceMapEmbed: true
+        }),
+        new TaskCssRebase('rebase', {
+            rebase: (obj, done) => {
+                // let resolved = obj.resolved;
+                // let componentResources = resources.has(component) ? resources.get(component) : [];
+                //
+                // componentResources.push(new Resource(resolved.path));
+                //
+                // resources.set(component, componentResources);
+
+                done();
+            }
+        })
+    ]),
+    new Job('js', [
+        new TaskBrowserify('bundle', {
+            basedir: 'src' //dirname(component.path)
+        })
+    ])
+]);
+
+buildABetterComponent(demoComponent);
+
+// app.getComponent('Field').initialState()
+//     .then((state) => {
+//         return job.run(state);
+//     })
+//     .then((state) => {
+//         console.warn(state);
+//     });

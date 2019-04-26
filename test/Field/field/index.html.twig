@@ -19,7 +19,7 @@
     {% set safeItems = safeItems|merge([item]) %}
 {% endfor %}
 
-{% include "../../../src/Field/field/index.html.twig" with {
+{% include "@Src/Field/field/index.html.twig" with {
     attributes: (attributes is not defined) ? drupal_attribute() : attributes,
     title_attributes: (title_attributes is not defined) ? drupal_attribute() : title_attributes,
     items: safeItems

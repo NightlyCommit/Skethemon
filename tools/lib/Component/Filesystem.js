@@ -17,9 +17,10 @@ class ComponentFilesystem extends Component {
     }
 
     /**
+     * @param {string|null} name
      * @returns {Promise<State>}
      */
-    initialState() {
+    initialState(name = null) {
         return new Promise((resolve, reject) => {
             readFile(this._path, 'UTF-8', (err, data) => {
                 if (err) {

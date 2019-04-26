@@ -1,6 +1,9 @@
 const {Task} = require('./Task');
 const {State} = require('./State');
 
+/**
+ * @implements IterableIterator
+ */
 class Job extends Task {
     /**
      * @param {string} name
@@ -29,11 +32,9 @@ class Job extends Task {
 
     /**
      * @param {State} state
-     * @returns {Promise<State[]>}
+     * @returns {Promise<State>}
      */
-    run(state) {
-        let results = [];
-
+    run(state, data) {
         let runFunctions = this.tasks.map((task) => {
             return task.run.bind(task);
         });
@@ -41,18 +42,16 @@ class Job extends Task {
         return runFunctions.reduce((accumulatorPromise, nextPromise) => {
             return accumulatorPromise
                 .then((state) => {
-                    return nextPromise(state);
+                    return nextPromise(state, data);
                 })
-                .then((states) => {
-                    for (let state of states) {
-                        results.push(state);
-                    }
+        }, Promise.resolve(state))
+            .then((state) => {
+                return state;
+            });
+    }
 
-                    return states[states.length - 1];
-                });
-        }, Promise.resolve(state)).then(() => {
-            return results;
-        });
+    [Symbol.iterator]() {
+        return this._tasks.values();
     }
 }
 
