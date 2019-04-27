@@ -7,7 +7,7 @@ const {resolve: pathResolve} = require('path');
  */
 class ComponentSass extends ComponentFilesystem {
     constructor(path) {
-        super('', path);
+        super('sass', path);
     }
 
     /**

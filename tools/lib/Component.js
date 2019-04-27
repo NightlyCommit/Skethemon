@@ -67,7 +67,7 @@ class Component {
      * @returns {string}
      */
     get fqn() {
-        return join(this.parent ? this.parent.fqn : '', this.name ? this.name : '');
+        return join(this.parent ? this.parent.fqn : '', this.name);
     }
 
     /**

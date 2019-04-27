@@ -162,6 +162,8 @@ let buildComponent = (component, job, output) => {
                         .then((state) => {
                             return component.data()
                                 .then((data) => {
+                                    console.warn(data);
+
                                     return job.run(state, data)
                                         .then((states) => {
                                             return [state].concat(states);
@@ -171,7 +173,7 @@ let buildComponent = (component, job, output) => {
                         .then((states) => {
                             let writePromises = [];
 
-                            console.warn('LET US WRITE TO', www);
+                            console.warn('LET US WRITE TO', job.name, www);
 
                             /**
                              * @type {Array<Resource>}
@@ -179,6 +181,8 @@ let buildComponent = (component, job, output) => {
                             let componentResources = resources.has(component) ? resources.get(component) : [];
                             let state = states[states.length - 1];
                             let map = state.map;
+
+                            console.warn(state.data);
 
                             if (map) {
                                 let mapObject = JSON.parse(map.toString());
@@ -249,14 +253,15 @@ let initPromises = [];
 let component = new ComponentCompound('Field', [
     new ComponentCompound('field', [
         new ComponentTwig('test/Field/field/index.html.twig', 'test/Field/field/test_cases.js'),
-        new ComponentSass('test/Field/field/index.scss')
+        new ComponentSass('test/Field/field/index.scss'),
     ]),
     new ComponentCompound('Formatter', [
         new ComponentCompound('image_formatter', [
             new ComponentTwig('test/Field/Formatter/image-formatter/index.html.twig', 'test/Field/Formatter/image-formatter/test_cases.js'),
-            new ComponentSass('test/Field/Formatter/image-formatter/index.scss')
+            new ComponentSass('test/Field/Formatter/image-formatter/index.scss'),
         ]),
-    ])
+    ]),
+    new ComponentSass('tools/templates/demo.scss') // added dynamically
 ]);
 
 // for (let component of [
@@ -334,7 +339,6 @@ let twigJob = new Job('twig', [
 let sassJob = new Job('sass', [
     new TaskSass('render', {
         precision: 8,
-        file: 'index.scss', //resolve(component.path),
         outFile: 'index.css',
         sourceMap: true,
         sourceMapEmbed: true
@@ -424,10 +428,12 @@ let job = new Job('demo', [
     ])
 ]);
 
-component = component.getComponent('field');
+// component = component;
 
-buildComponent(new ComponentDemo(component), twigJob, 'index.html');
-buildComponent(new ComponentDemo(component), sassJob, 'index.css');
+buildComponent(new ComponentDemo(component), twigJob, 'demo.html');
+// todo: should be possible to build this outside of the demo
+buildComponent(component, twigJob, 'index.html');
+buildComponent(component, sassJob, 'index.css');
 
 // app.getComponent('Field').initialState()
 //     .then((state) => {

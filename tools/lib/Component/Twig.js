@@ -9,7 +9,7 @@ const requireUncached = require('require-uncached');
  */
 class ComponentTwig extends ComponentFilesystem {
     constructor(path, dataModulePath) {
-        super(null, path);
+        super('twig', path);
 
         this._dataModulePath = dataModulePath;
     }
@@ -32,7 +32,7 @@ class ComponentTwig extends ComponentFilesystem {
         return new Promise((resolve, reject) => {
             let data = {
                 cases: [],
-                title: this.fqn,
+                title: this.parent.fqn,
                 template: pathResolve(this.path)
             };
 

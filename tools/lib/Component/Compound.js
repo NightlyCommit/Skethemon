@@ -13,20 +13,18 @@ class ComponentCompound extends Component {
         super(name);
 
         /**
-         * @type {Map<string, Component>}
+         * @type {Component[]}
          * @private
          */
-        this._components = new Map();
+        this._components = components;
 
-        for (let component of components) {
+        for (let component of this) {
             component.parent = this;
-
-            this._components.set(component.name, component);
         }
     }
 
     /**
-     * @returns {Map<string, Component>}
+     * @returns {Component[]}
      */
     get components() {
         return this._components;
@@ -37,7 +35,9 @@ class ComponentCompound extends Component {
      * @returns {Component}
      */
     getComponent(name) {
-        return this._components.has(name) ? this._components.get(name) : null;
+        return this.components.find((item) => {
+            return item.name === name;
+        });
     }
 
     /**
@@ -52,10 +52,15 @@ class ComponentCompound extends Component {
      * @returns {Promise<State>}
      */
     initialState(name = null) {
-        let states = [];
+        let data = '';
 
-        let promises = [...this.components.values()].map((component) => {
-            return component.initialState(name);
+        let promises = this.components.map((component) => {
+            return component.initialState(name)
+                .then((state) => {
+                    if (!name || state.name === name) {
+                        data += state.data;
+                    }
+                });
         });
 
         return promises.reduce((accumulator, next) => {
@@ -63,27 +68,16 @@ class ComponentCompound extends Component {
                 .then(() => {
                     return next
                 })
-                .then((state) => {
-                    states.push(state);
-                });
         }, Promise.resolve())
             .then(() => {
-                let stateData = '';
-
-                for (let state of states) {
-                    if (!name || (state.name === name)) {
-                        stateData += state.data;
-                    }
-                }
-
-                return new State(name ? name : this.name, stateData, null);
+                return new State(name ? name : this.name, data, null);
             });
     }
 
     data() {
         let data = new Map();
 
-        let promises = [...this.components.values()].map((component) => {
+        let promises = this.components.map((component) => {
             return component.data()
                 .then((componentData) => {
                     data.set(component.name, componentData);
