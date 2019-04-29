@@ -1,0 +1,17 @@
+<div class="demo--test">
+    <header>{{ title }}</header>
+    {% for case in cases %}
+        {% with case %}
+            <div class="demo--test--case">
+                <header>
+                    {{ title }}
+                </header>
+                <div class="demo--test--case--content">
+                    {% with content %}
+                        {{ include(template) }}
+                    {% endwith %}
+                </div>
+            </div>
+        {% endwith %}
+    {% endfor %}
+</div>

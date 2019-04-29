@@ -5,19 +5,19 @@ module.exports = (require) => {
     return [
         {
             title: 'With URL',
-            data: {
+            content: {
                 url: 'https://picsum.photos'
             }
         },
         {
             title: 'Landscape',
-            data: {
+            content: {
                 default_image_width: 800
             }
         },
         {
             title: 'Portrait',
-            data: {
+            content: {
                 default_image_height: 800
             }
         }

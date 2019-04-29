@@ -2,49 +2,39 @@ const {Component} = require('../Component');
 const {State} = require('../State');
 
 /**
- * @implements IterableIterator
+ * @class
  */
 class ComponentCompound extends Component {
     /**
      * @param {string} name
-     * @param {Component[]} components
+     * @param {ComponentInterface[]} children
      */
-    constructor(name, components) {
+    constructor(name, children) {
         super(name);
 
         /**
-         * @type {Component[]}
+         * @type {ComponentInterface[]}
          * @private
          */
-        this._components = components;
-
-        for (let component of this) {
-            component.parent = this;
-        }
+        this._children = children;
     }
 
     /**
-     * @returns {Component[]}
+     * @returns {ComponentInterface[]}
      */
-    get components() {
-        return this._components;
+    get children() {
+        return this._children;
     }
+
 
     /**
      * @param name
-     * @returns {Component}
+     * @returns {ComponentInterface}
      */
-    getComponent(name) {
-        return this.components.find((item) => {
+    getChild(name) {
+        return this.children.find((item) => {
             return item.name === name;
         });
-    }
-
-    /**
-     * @returns {IterableIterator<Component>}
-     */
-    [Symbol.iterator]() {
-        return this.components.values();
     }
 
     /**
@@ -54,12 +44,12 @@ class ComponentCompound extends Component {
     initialState(name = null) {
         let data = '';
 
-        let promises = this.components.map((component) => {
+        let promises = this.children.map((component) => {
+            console.warn(component, component.initialState);
+
             return component.initialState(name)
                 .then((state) => {
-                    if (!name || state.name === name) {
-                        data += state.data;
-                    }
+                    data += state.data;
                 });
         });
 
@@ -70,31 +60,41 @@ class ComponentCompound extends Component {
                 })
         }, Promise.resolve())
             .then(() => {
-                return new State(name ? name : this.name, data, null);
+                return new State(this.name, data, null);
             });
     }
 
     data() {
+        /**
+         * @type {Map<string, Map>}
+         */
         let data = new Map();
 
-        let promises = this.components.map((component) => {
+        let promises = this.children.map((component) => {
             return component.data()
                 .then((componentData) => {
                     data.set(component.name, componentData);
+
+                    return Promise.resolve();
                 });
         });
 
-        return promises.reduce((accumulator, next) => {
+        return promises.reduce((accumulator, currentValue) => {
             return accumulator
                 .then(() => {
-                    return next
+                    return currentValue;
                 })
         }, Promise.resolve())
             .then(() => {
-                return {
-                    children: data
-                };
+                return data;
             });
+    }
+
+    /**
+     * @returns {IterableIterator<ComponentInterface>}
+     */
+    [Symbol.iterator]() {
+        return this.children.values();
     }
 }
 

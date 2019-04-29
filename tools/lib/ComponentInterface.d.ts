@@ -1,6 +1,8 @@
 import {State} from './State';
 
-interface ComponentInterface {
+interface ComponentInterface extends IterableIterator {
+    name: string;
+
     /**
      * @param {string|null} name
      * @return {Promise<State>}
@@ -11,4 +13,9 @@ interface ComponentInterface {
      * @return {Promise<*>}
      */
     data(): Promise<any>;
+
+    /**
+     * @param {string} separator
+     */
+    fqn(separator?): string;
 }

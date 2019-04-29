@@ -1,46 +1,58 @@
-const {ComponentFilesystem} = require('./Filesystem');
+const {Component} = require('../Component');
 const {State} = require('../State');
-const {readFile} = require('fs');
-const {join} = require('path');
+const {resolve: resolvePath} = require('path');
 
-class ComponentDemo extends ComponentFilesystem {
+class ComponentDemo extends Component {
     /**
-     * @param {Component} component
+     * @param {string} path
+     * @param {ComponentInterface} component
      */
-    constructor(component) {
-        super(`${component.name}`, 'tools/templates/demo.html.twig');
+    constructor(path, component) {
+        super(component.name);
 
         /**
-         * @type {Component}
+         * @type {ComponentInterface}
          * @private
          */
         this._component = component;
 
-        // this.component.parent = this;
+        /**
+         * @type {string}
+         * @private
+         */
+        this._path = path;
     }
 
     /**
-     * @returns {Component}
+     * @returns {ComponentInterface}
      */
     get component() {
         return this._component;
     }
 
-    get fqn() {
-        return this.component.fqn;
+    initialState(name = null) {
+        if (name === 'twig') {
+            return Promise.resolve(
+                new State(this.name, `{{ include("${resolvePath(this._path)}", ${this.fqn('.')}) }}`)
+            );
+        }
+        else {
+            return Promise.resolve(new State(this.name, ''));
+        }
     }
 
     data() {
-
         return this.component.data()
             .then((data) => {
+                console.warn('DEMO DATA', data);
+
                 return {
-                    title: this.fqn,
+                    title: this.component.fqn(),
                     timestamp: new Date().getTime(),
                     language: 'en',
                     direction: 'ltr',
-                    test: data
-                }
+                    children: data
+                };
             });
     }
 }

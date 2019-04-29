@@ -1,5 +1,6 @@
 const {Component} = require('../lib/Component');
 const {ComponentDemo} = require('../lib/Component/Demo');
+const {ComponentTestDemo} = require('../lib/Component/TestDemo');
 const {ComponentFilesystem} = require('../lib/Component/Filesystem');
 const {ComponentCompound} = require('../lib/Component/Compound');
 const {ComponentTwig} = require('../lib/Component/Twig');
@@ -134,15 +135,15 @@ let jobDefinitions = new Map([
 let watchers = new Map();
 
 /**
- * @param {ComponentCompound} component
+ * @param {ComponentInterface} component
  */
 let buildComponent = (component, job, output) => {
     console.warn('WE BUILD ' + component.name + ' WITH JOB ' + job.name);
 
-    let www = join('www', component.fqn);
+    let www = join('www', component.fqn());
 
     return new Promise((resolve) => {
-        rimraf(www, () => {
+        rimraf('www', () => {
             return Promise.resolve()
                 .then((results) => {
                     /**
@@ -162,9 +163,19 @@ let buildComponent = (component, job, output) => {
                         .then((state) => {
                             return component.data()
                                 .then((data) => {
-                                    console.warn(data);
+                                    let runData = new Map();
 
-                                    return job.run(state, data)
+                                    let parts = [];
+
+                                    let last = parts.reduce((accumulator, currentValue) => {
+                                        accumulator.set(currentValue, new Map());
+
+                                        return accumulator.get(currentValue);
+                                    }, runData);
+
+                                    last.set(component.name, data);
+
+                                    return job.run(state, runData)
                                         .then((states) => {
                                             return [state].concat(states);
                                         })
@@ -181,8 +192,6 @@ let buildComponent = (component, job, output) => {
                             let componentResources = resources.has(component) ? resources.get(component) : [];
                             let state = states[states.length - 1];
                             let map = state.map;
-
-                            console.warn(state.data);
 
                             if (map) {
                                 let mapObject = JSON.parse(map.toString());
@@ -252,16 +261,18 @@ let initPromises = [];
 
 let component = new ComponentCompound('Field', [
     new ComponentCompound('field', [
-        new ComponentTwig('test/Field/field/index.html.twig', 'test/Field/field/test_cases.js'),
-        new ComponentSass('test/Field/field/index.scss'),
+        new ComponentTestDemo('Test demo', 'test/Field/field/index.html.twig', 'test/Field/field/test_cases.js'),
+        new ComponentSass('Test stylesheet', 'test/Field/field/index.scss'),
     ]),
     new ComponentCompound('Formatter', [
         new ComponentCompound('image_formatter', [
-            new ComponentTwig('test/Field/Formatter/image-formatter/index.html.twig', 'test/Field/Formatter/image-formatter/test_cases.js'),
-            new ComponentSass('test/Field/Formatter/image-formatter/index.scss'),
+            new ComponentTestDemo('Field/Formatter/image_formatter', 'test/Field/Formatter/image-formatter/index.html.twig', 'test/Field/Formatter/image-formatter/test_cases.js'),
+            new ComponentSass('sass', 'test/Field/Formatter/image-formatter/index.scss'),
         ]),
     ]),
-    new ComponentSass('tools/templates/demo.scss') // added dynamically
+    new ComponentCompound('Demo', [ // added dynamically
+        new ComponentSass('sass', 'tools/templates/demo.scss')
+    ])
 ]);
 
 // for (let component of [
@@ -312,6 +323,7 @@ let component = new ComponentCompound('Field', [
 
 let filesystemLoader = new TwingLoaderFilesystem();
 
+filesystemLoader.addPath('tools', 'Lib');
 filesystemLoader.addPath('src', 'Src');
 filesystemLoader.addPath('test', 'Test');
 
@@ -430,9 +442,11 @@ let job = new Job('demo', [
 
 // component = component;
 
-buildComponent(new ComponentDemo(component), twigJob, 'demo.html');
-// todo: should be possible to build this outside of the demo
-buildComponent(component, twigJob, 'index.html');
+// buildComponent(component.getChild('field'), twigJob, 'index.html');
+// buildComponent(component, twigJob, 'super-index.html');
+buildComponent(new ComponentDemo('tools/templates/demo.html.twig', component.getChild('field')), twigJob, 'demo.html');
+buildComponent(new ComponentDemo('tools/templates/demo.html.twig', component), twigJob, 'super-demo.html');
+
 buildComponent(component, sassJob, 'index.css');
 
 // app.getComponent('Field').initialState()

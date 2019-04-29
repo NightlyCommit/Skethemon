@@ -5,7 +5,7 @@ module.exports = (require) => {
     return [
         {
             title: 'Test case 1',
-            data: {
+            content: {
                 label: 'Field label',
                 items: [
                     {
@@ -19,7 +19,7 @@ module.exports = (require) => {
         },
         {
             title: 'Test case 2',
-            data: {
+            content: {
                 label: 'Field label',
                 items: [
                     {

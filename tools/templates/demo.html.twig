@@ -3,26 +3,12 @@
 {% macro render(test) %}
     {% import _self as self %}
 
-    {% if test.children|length %}
-        {% for name, child in test.children %}
+    {% if test.cases is defined %}
+        {{ include('../test-demo.html.twig', test) }}
+    {% else %}
+        {% for name, child in test %}
             {{ self.render(child) }}
         {% endfor %}
-    {% else %}
-        <div class="demo--test">
-            <header>{{ test.title }}</header>
-            <div class="demo--test--cases">
-                {% for case in test.cases %}
-                    <div class="demo--test--case">
-                        <header>
-                            {{ case.title }}
-                        </header>
-                        <div class="demo--test--case--content">
-                            {{ include(test.template, case.data) }}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
     {% endif %}
 {% endmacro %}
 
@@ -36,7 +22,7 @@
 <body class="demo">
 <div class="demo--title">{{ title }}</div>
 <div class="demo--content">
-    {{ self.render(test) }}
+    {{ self.render(children) }}
 </div>
 <script type="text/javascript" src="index.js?{{ timestamp }}"></script>
 </body>

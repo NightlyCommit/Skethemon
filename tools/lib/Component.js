@@ -1,5 +1,4 @@
 const {State} = require('./State');
-const {join} = require('path');
 
 /**
  * @implements {ComponentInterface}
@@ -14,18 +13,6 @@ class Component {
          * @private
          */
         this._name = name;
-
-        /**
-         * @type {ComponentInterface}
-         * @private
-         */
-        this._parent = null;
-
-        /**
-         * @type {State[]}
-         * @private
-         */
-        this._states = null;
     }
 
     /**
@@ -36,61 +23,37 @@ class Component {
     }
 
     /**
-     * @returns {ComponentInterface}
+     * @returns {ComponentInterface[]}
      */
-    get parent() {
-        return this._parent;
-    }
-
-    /**
-     * @param {ComponentInterface} parent
-     */
-    set parent(parent) {
-        this._parent = parent;
-    }
-
-    /**
-     * @returns {State[]}
-     */
-    get states() {
-        return this._states;
-    }
-
-    /**
-     * @param {State[]} states
-     */
-    set states(states) {
-        this._states = states;
+    get children() {
+        return this._children;
     }
 
     /**
      * @returns {string}
      */
-    get fqn() {
-        return join(this.parent ? this.parent.fqn : '', this.name);
+    fqn(separator = '/') {
+        let components = [];
+
+        components.push(this.name);
+
+        return components.join(separator);
     }
 
     /**
      * @param {string|null} name
-     * @returns {Promise<State>}
+     * @return {Promise<State>}
      */
     initialState(name = null) {
-        return Promise.resolve(new State(this.name, null));
-    }
+        return Promise.resolve(new State(this.name, ''));
+    };
 
     /**
-     * @returns {Promise<*>}
+     * @return {Promise<*>}
      */
     data() {
         return Promise.resolve({});
-    }
-
-    /**
-     * @returns {IterableIterator<Component>}
-     */
-    [Symbol.iterator]() {
-        return [].values();
-    }
+    };
 }
 
 exports.Component = Component;
