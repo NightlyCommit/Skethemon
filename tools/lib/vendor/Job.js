@@ -32,6 +32,7 @@ class Job extends Task {
 
     /**
      * @param {State} state
+     * @param {*} data
      * @returns {Promise<State>}
      */
     run(state, data) {

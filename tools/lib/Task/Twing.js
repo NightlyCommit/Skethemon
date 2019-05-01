@@ -28,12 +28,7 @@ class TaskTwing extends Task {
         }, config);
     }
 
-    /**
-     * @param {State} state
-     */
     run(state, data) {
-        console.warn('RUN', data, state);
-
         return this._config.context_provider
             .then((context) => {
                 let loader = new TwingLoaderChain([

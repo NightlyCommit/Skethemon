@@ -169,12 +169,14 @@ let buildComponentWithJob = (component, job) => {
         watcher.close();
     }
 
-    console.warn('OUTPUT >>>', output);
+    // console.warn('OUTPUT >>>', output);
 
     let stateAndDataPromises = [
         component.initialState(job.name),
         component.data()
     ];
+
+    let resources = [];
 
     return Promise.all(stateAndDataPromises)
         .then(([state, data]) => {
@@ -190,15 +192,14 @@ let buildComponentWithJob = (component, job) => {
         .then((states) => {
             let writePromises = [];
 
-            console.warn('LET US WRITE TO', job.name, www);
+            // console.warn('LET US WRITE TO', job.name, www);
 
             /**
-             * @type {Array<Resource>}
+             * @type {State}
              */
-            let componentResources = resources.has(component) ? resources.get(component) : [];
             let state = states[states.length - 1];
 
-            console.warn('LAST STATE FOR', job.name, state.data.toString());
+            // console.warn('LAST STATE FOR', job.name, state.data.toString());
 
             let map = state.map;
 
@@ -206,13 +207,11 @@ let buildComponentWithJob = (component, job) => {
                 let mapObject = JSON.parse(map.toString());
 
                 for (let source of mapObject.sources) {
-                    componentResources.push(new Resource(source));
+                    resources.push(new Resource(source));
                 }
             }
 
-            resources.set(component, componentResources);
-
-            for (let resource of componentResources) {
+            for (let resource of resources) {
                 if (resource.type & ResourceType.COPY) {
                     let dest = join(www, resource.source);
 
@@ -235,15 +234,12 @@ let buildComponentWithJob = (component, job) => {
             }));
 
             return Promise.all(writePromises).then(() => {
-                /**
-                 * @type {Array<Resource>}
-                 */
-                let componentResources = resources.has(component) ? resources.get(component) : [];
-
-                return componentResources.map((resource) => resolvePath(resource.source));
+                return resources.map((resource) => resolvePath(resource.source));
             });
         })
         .then((sourcesToWatch) => {
+            // console.warn('sOURCE FOR', job.name, sourcesToWatch);
+
             watcher = new Gaze(sourcesToWatch).on('changed', () => {
                 buildComponentWithJob(component, job)
                     .then(() => {
@@ -261,40 +257,6 @@ let buildComponentWithJob = (component, job) => {
         });
 };
 
-/**
- * @param {ComponentInterface} component
- * @param {Job} job
- */
-let buildComponent = (component, job) => {
-    console.warn('WE BUILD ' + component.name + ' WITH JOB ' + job.name);
-
-    return Promise.resolve()
-        .then(() => {
-            let promises = [];
-
-            for (let child of job) {
-                promises.push(buildComponentWithJob(component, child));
-            }
-
-            return Promise.all(promises);
-        });
-};
-
-let component = new ComponentCompound('Field', [
-    new ComponentCompound('Field__field', [
-        new ComponentDemoTest('Field > field', 'test/Field/field/index.html.twig', 'test/Field/field/test_cases.js'),
-        new ComponentSass('Field > field', 'test/Field/field/index.scss'),
-    ]),
-    new ComponentCompound('Field__Formatter', [
-        new ComponentCompound('Field__Formatter__image_formatter', [
-            new ComponentDemoTest('Field > Formatter > image_formatter', 'test/Field/Formatter/image-formatter/index.html.twig', 'test/Field/Formatter/image-formatter/test_cases.js'),
-            new ComponentSass('Field > Formatter > image_formatter', 'test/Field/Formatter/image-formatter/index.scss'),
-        ]),
-    ]),
-    new ComponentCompound('Demo', [ // added dynamically
-        new ComponentSass('Demo', 'tools/demo/index.scss')
-    ])
-]);
 
 let filesystemLoader = new TwingLoaderFilesystem();
 
@@ -349,6 +311,41 @@ let job = new Job('demo', [
     sassJob
 ]);
 
+/**
+ * @param {ComponentInterface} component
+ */
+let buildComponent = (component) => {
+    console.warn('WE BUILD ' + component.name + ' WITH JOB ' + job.name);
+
+    return Promise.resolve()
+        .then(() => {
+            let promises = [];
+
+            for (let child of job) {
+                promises.push(buildComponentWithJob(component, child));
+            }
+
+            return Promise.all(promises);
+        });
+};
+
+let component = new ComponentCompound('Field', [
+    new ComponentCompound('Field__field', [
+        new ComponentDemoTest('Field > field', 'test/Field/field/index.html.twig', 'test/Field/field/test_cases.js'),
+        new ComponentSass('Field > field', 'test/Field/field/index.scss'),
+    ]),
+    new ComponentCompound('Field__Formatter', [
+        new ComponentCompound('Field__Formatter__image_formatter', [
+            new ComponentDemoTest('Field > Formatter > image_formatter', 'test/Field/Formatter/image-formatter/index.html.twig', 'test/Field/Formatter/image-formatter/test_cases.js'),
+            new ComponentSass('Field > Formatter > image_formatter', 'test/Field/Formatter/image-formatter/index.scss'),
+        ]),
+    ]),
+    new ComponentCompound('Demo', [ // added dynamically
+        new ComponentSass('Demo', 'tools/demo/index.scss')
+    ])
+]);
+
+
 let browserSyncInit = (component) => new Promise((resolve, reject) => {
     let browserSync = createBrowserSync(component.name);
     let browserSyncConfig = {
@@ -388,8 +385,8 @@ let browserSyncInit = (component) => new Promise((resolve, reject) => {
 component = new ComponentDemoIndex(component);
 
 browserSyncInit(component)
-    .then((bs) => {
-        return buildComponent(component, job);
+    .then(() => {
+        return buildComponent(component);
     });
 
 

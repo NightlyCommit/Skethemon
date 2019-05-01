@@ -11,15 +11,13 @@ class ComponentSass extends ComponentFilesystem {
      * @returns {Promise<State>}
      */
     initialState(name = null) {
-        let data;
-
-        console.warn('INIT', name);
+        let state;
 
         if (name === 'sass') {
-            data = `@import "${pathResolve(this.path)}";`;
+            state = new State(this.name, `@import "${pathResolve(this.path)}";`);
         }
 
-        return  Promise.resolve(data ? new State(this.name, data, null) : null);
+        return Promise.resolve(state);
     }
 }
 
