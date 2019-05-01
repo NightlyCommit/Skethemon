@@ -1,5 +1,5 @@
-const {Task} = require('../Task');
-const {State} = require('../State');
+const {Task} = require('../vendor/Task');
+const {State} = require('../vendor/State');
 const {Readable, Writable} = require('stream');
 const {join} = require('path');
 

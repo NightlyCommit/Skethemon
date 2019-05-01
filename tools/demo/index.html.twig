@@ -4,7 +4,7 @@
     {% import _self as self %}
 
     {% if test.cases is defined %}
-        {{ include('../test-demo.html.twig', test) }}
+        {{ include(test.template, test) }}
     {% else %}
         {% for name, child in test %}
             {{ self.render(child) }}
@@ -20,6 +20,7 @@
     <link rel="stylesheet" type="text/css" href="index.css?{{ timestamp }}">
 </head>
 <body class="demo">
+BDDY----SSSZZZZZZZz **** ==== 999eeEEss
 <div class="demo--title">{{ title }}</div>
 <div class="demo--content">
     {{ self.render(children) }}

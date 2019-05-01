@@ -42,14 +42,14 @@ class ComponentCompound extends Component {
      * @returns {Promise<State>}
      */
     initialState(name = null) {
-        let data = '';
+        let states = [];
 
         let promises = this.children.map((component) => {
-            console.warn(component, component.initialState);
-
             return component.initialState(name)
                 .then((state) => {
-                    data += state.data;
+                    if (state) {
+                        states.push(state);
+                    }
                 });
         });
 
@@ -60,7 +60,17 @@ class ComponentCompound extends Component {
                 })
         }, Promise.resolve())
             .then(() => {
-                return new State(this.name, data, null);
+                let state;
+
+                console.warn(states);
+
+                if (states.length) {
+                    let statesData = states.map((state) => state.data);
+
+                    state = new State(this.name, statesData.join('\n'), null);
+                }
+
+                return state;
             });
     }
 

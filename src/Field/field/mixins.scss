@@ -1,0 +1,37 @@
+@import "../../../node_modules/rtl-sass/src/border";
+
+@mixin skethemon--Field--field--items() {
+    > .item {
+        margin-bottom: 1em;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+@mixin skethemon--Field--field--item() {
+}
+
+@mixin skethemon--Field--field--label() {
+    font-weight: 700;
+    font-size: 1.2em;
+}
+
+@mixin skethemon--Field--field() {
+    @include rtl-sass-border-left(solid 5px red);
+
+    .label {
+        @include skethemon--Field--field--label;
+        margin-bottom: 1em;
+    }
+
+    .items {
+        @include skethemon--Field--field--items;
+    }
+
+    .item {
+        @include skethemon--Field--field--item;
+    }
+}
+

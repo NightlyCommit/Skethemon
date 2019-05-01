@@ -1,5 +1,5 @@
-const {ComponentFilesystem} = require('./Filesystem');
-const {State} = require('../State');
+const {ComponentFilesystem} = require('../vendor/Component/Filesystem');
+const {State} = require('../vendor/State');
 const {resolve: resolvePath} = require('path');
 
 /**
@@ -11,14 +11,13 @@ class ComponentTwig extends ComponentFilesystem {
      * @returns {Promise<State>}
      */
     initialState(name = null) {
-        return new Promise((resolve) => {
-            if (name === 'twig') {
-                resolve(new State(this.name, `{{ include("${resolvePath(this.path)}") }}`));
-            }
-            else {
-                resolve(null);
-            }
-        });
+        let state;
+
+        if (name === 'twig') {
+            state = new State(this.name, `{{ include("${resolvePath(this.path)}") }}`);
+        }
+
+        return Promise.resolve(state);
     }
 
 }

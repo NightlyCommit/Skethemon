@@ -30,17 +30,6 @@ class Component {
     }
 
     /**
-     * @returns {string}
-     */
-    fqn(separator = '/') {
-        let components = [];
-
-        components.push(this.name);
-
-        return components.join(separator);
-    }
-
-    /**
      * @param {string|null} name
      * @return {Promise<State>}
      */

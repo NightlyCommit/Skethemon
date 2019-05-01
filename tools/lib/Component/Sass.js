@@ -1,5 +1,5 @@
-const {ComponentFilesystem} = require('./Filesystem');
-const {State} = require('../State');
+const {ComponentFilesystem} = require('../vendor/Component/Filesystem');
+const {State} = require('../vendor/State');
 const {resolve: pathResolve} = require('path');
 
 /**
@@ -11,9 +11,15 @@ class ComponentSass extends ComponentFilesystem {
      * @returns {Promise<State>}
      */
     initialState(name = null) {
-        return new Promise((resolve) => {
-            resolve(new State(this.name, `@import "${pathResolve(this.path)}";`, null));
-        });
+        let data;
+
+        console.warn('INIT', name);
+
+        if (name === 'sass') {
+            data = `@import "${pathResolve(this.path)}";`;
+        }
+
+        return  Promise.resolve(data ? new State(this.name, data, null) : null);
     }
 }
 

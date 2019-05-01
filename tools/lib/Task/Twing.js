@@ -1,5 +1,5 @@
-const {Task} = require('../Task');
-const {State} = require('../State');
+const {Task} = require('../vendor/Task');
+const {State} = require('../vendor/State');
 const {TwingEnvironment, TwingLoaderArray, TwingLoaderChain} = require('twing/index');
 const {inspect} = require('util');
 
@@ -48,8 +48,6 @@ class TaskTwing extends Task {
                 for (let [name, extension] of this._config.extensions) {
                     env.addExtension(extension, name);
                 }
-
-                console.warn('LET US RENDER', this._config.file, state.data, 'WITH', inspect(data, false, 100));
 
                 let render = env.render(this._config.file, data);
 

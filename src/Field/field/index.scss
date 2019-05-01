@@ -1,17 +1,5 @@
-@import "../../../node_modules/rtl-sass/src/border";
+@import "mixins";
 
 .skethemon--Field--field {
-    @include rtl-sass-border-left(solid 5px red);
-
-    .items {
-        padding: 2em;
-    }
-
-    .item {
-        margin-bottom: 1em;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-    }
+    @include skethemon--Field--field;
 }

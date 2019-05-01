@@ -1,5 +1,5 @@
-const {Task} = require('../Task');
-const {State} = require('../State');
+const {Task} = require('../vendor/Task');
+const {State} = require('../vendor/State');
 
 const {render} = require('node-sass');
 
@@ -8,7 +8,6 @@ class TaskSass extends Task {
         super(name);
 
         this.config = config || {};
-
     }
 
     /**

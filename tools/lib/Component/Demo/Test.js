@@ -1,19 +1,22 @@
-const {Component} = require('../Component');
+const {ComponentDemo} = require('../Demo');
 const {resolve: resolvePath} = require('path');
 const {stat} = require('fs');
 const requireUncached = require('require-uncached');
 
-class ComponentTestDemo extends Component {
+class ComponentDemoTest extends ComponentDemo {
     /**
+     * @param {string} name
      * @param {string} template
      * @param {string} dataModulePath
      */
     constructor(name, template, dataModulePath) {
-        super(name);
+        super(name, 'tools/demo/test.html.twig');
 
-        this._path = 'tools/test-demo.html.twig';
+        /**
+         * @type {string}
+         * @private
+         */
         this._template = template;
-        this._name = name;
 
         /**
          * @type {string}
@@ -22,24 +25,21 @@ class ComponentTestDemo extends Component {
         this._dataModulePath = dataModulePath;
     }
 
-    get dataModulePath() {
-        return this._dataModulePath;
-    }
-
     get template() {
         return this._template;
     }
 
-    get path() {
-        return this._path;
+    get dataModulePath() {
+        return this._dataModulePath;
     }
 
     data() {
         return new Promise((resolve, reject) => {
             let data = {
                 cases: [],
-                title: this.fqn(),
-                template: resolvePath(this.template),
+                case_template: resolvePath(this.template),
+                title: this.name,
+                template: resolvePath(this.path),
             };
 
             stat(this.dataModulePath, (err) => {
@@ -71,4 +71,4 @@ class ComponentTestDemo extends Component {
 
 }
 
-exports.ComponentTestDemo = ComponentTestDemo;
+exports.ComponentDemoTest = ComponentDemoTest;

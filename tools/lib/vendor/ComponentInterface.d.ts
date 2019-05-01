@@ -13,9 +13,4 @@ interface ComponentInterface extends IterableIterator {
      * @return {Promise<*>}
      */
     data(): Promise<any>;
-
-    /**
-     * @param {string} separator
-     */
-    fqn(separator?): string;
 }

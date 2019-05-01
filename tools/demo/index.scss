@@ -17,6 +17,14 @@
     &--content {
         padding: 1.0em;
 
+        .demo--test {
+            margin-bottom: 2.0em;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+
         .demo--test,
         .demo--test--case {
             > header {
