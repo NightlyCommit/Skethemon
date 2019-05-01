@@ -23,25 +23,18 @@ class Component {
     }
 
     /**
-     * @returns {ComponentInterface[]}
-     */
-    get children() {
-        return this._children;
-    }
-
-    /**
      * @param {string|null} name
      * @return {Promise<State>}
      */
     initialState(name = null) {
-        return Promise.resolve(new State(this.name, ''));
+        return Promise.resolve();
     };
 
     /**
      * @return {Promise<*>}
      */
     data() {
-        return Promise.resolve({});
+        return Promise.resolve();
     };
 }
 

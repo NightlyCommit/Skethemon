@@ -139,139 +139,146 @@ let outputDefinitions = new Map([
 ]);
 
 /**
- * @type {Map<ComponentInterface, Gaze>}
+ * @type {Map<ComponentInterface, Map<Job, Gaze>>}
  */
 let watchers = new Map();
 
 /**
  * @param {ComponentInterface} component
  * @param {Job} job
- * @param {string} output
  */
-let buildComponent = (component, job, output = null) => {
-    console.warn('WE BUILD ' + component.name + ' WITH JOB ' + job.name);
-
+let buildComponentWithJob = (component, job) => {
+    let output = outputDefinitions.get(job.name);
     let www = join('www', component.name);
 
     /**
      * @type {Gaze}
      */
     let watcher;
+    let componentWatchers;
 
-    if (watchers.has(component)) {
-        watcher = watchers.get(component);
+    if (!watchers.has(component)) {
+        watchers.set(component, new Map());
+    }
+
+    componentWatchers = watchers.get(component);
+
+    if (componentWatchers.has(job)) {
+        watcher = componentWatchers.get(job);
+
         watcher.close();
     }
 
+    console.warn('OUTPUT >>>', output);
+
+    let stateAndDataPromises = [
+        component.initialState(job.name),
+        component.data()
+    ];
+
+    return Promise.all(stateAndDataPromises)
+        .then(([state, data]) => {
+            if (state) {
+                return job.run(state, new Map([[component.name, data]]))
+                    .then((states) => {
+                        return [state].concat(states);
+                    })
+            } else {
+                return [];
+            }
+        })
+        .then((states) => {
+            let writePromises = [];
+
+            console.warn('LET US WRITE TO', job.name, www);
+
+            /**
+             * @type {Array<Resource>}
+             */
+            let componentResources = resources.has(component) ? resources.get(component) : [];
+            let state = states[states.length - 1];
+
+            console.warn('LAST STATE FOR', job.name, state.data.toString());
+
+            let map = state.map;
+
+            if (map) {
+                let mapObject = JSON.parse(map.toString());
+
+                for (let source of mapObject.sources) {
+                    componentResources.push(new Resource(source));
+                }
+            }
+
+            resources.set(component, componentResources);
+
+            for (let resource of componentResources) {
+                if (resource.type & ResourceType.COPY) {
+                    let dest = join(www, resource.source);
+
+                    writePromises.push(new Promise((resolve) => {
+                        copy(resource.source, dest, () => {
+                            resolve();
+                        });
+                    }));
+                }
+            }
+
+            writePromises.push(new Promise((resolve, reject) => {
+                outputFile(join(www, output), state.data, (err) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            }));
+
+            return Promise.all(writePromises).then(() => {
+                /**
+                 * @type {Array<Resource>}
+                 */
+                let componentResources = resources.has(component) ? resources.get(component) : [];
+
+                return componentResources.map((resource) => resolvePath(resource.source));
+            });
+        })
+        .then((sourcesToWatch) => {
+            watcher = new Gaze(sourcesToWatch).on('changed', () => {
+                buildComponentWithJob(component, job)
+                    .then(() => {
+                        let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
+
+                        if (bs) {
+                            logger.unprefixed('info', 'Reloading ' + output);
+
+                            bs.reload(output);
+                        }
+                    });
+            });
+
+            componentWatchers.set(job, watcher);
+        });
+};
+
+/**
+ * @param {ComponentInterface} component
+ * @param {Job} job
+ */
+let buildComponent = (component, job) => {
+    console.warn('WE BUILD ' + component.name + ' WITH JOB ' + job.name);
+
     return Promise.resolve()
-        .then((results) => {
+        .then(() => {
             let promises = [];
 
             for (let child of job) {
-                let jobOutput = output;
-
-                if (!jobOutput) {
-                    jobOutput = outputDefinitions.get(child.name);
-                }
-
-                console.warn('OUTPUT >>>', jobOutput);
-
-                let stateAndDataPromises = [
-                    component.initialState(child.name),
-                    component.data()
-                ];
-
-                promises.push(Promise.all(stateAndDataPromises)
-                    .then(([state, data]) => {
-                        if (state) {
-                            return child.run(state, new Map([[component.name, data]]))
-                                .then((states) => {
-                                    return [state].concat(states);
-                                })
-                        } else {
-                            return [];
-                        }
-                    })
-                    .then((states) => {
-                        let writePromises = [];
-
-                        console.warn('LET US WRITE TO', child.name, www);
-
-                        /**
-                         * @type {Array<Resource>}
-                         */
-                        let componentResources = resources.has(component) ? resources.get(component) : [];
-                        let state = states[states.length - 1];
-
-                        console.warn('LAST STATE FOR', child.name, state.data.toString());
-
-                        let map = state.map;
-
-                        if (map) {
-                            let mapObject = JSON.parse(map.toString());
-
-                            for (let source of mapObject.sources) {
-                                componentResources.push(new Resource(source));
-                            }
-                        }
-
-                        resources.set(component, componentResources);
-
-                        for (let resource of componentResources) {
-                            if (resource.type & ResourceType.COPY) {
-                                let dest = join(www, resource.source);
-
-                                writePromises.push(new Promise((resolve) => {
-                                    copy(resource.source, dest, () => {
-                                        resolve();
-                                    });
-                                }));
-                            }
-                        }
-
-                        writePromises.push(new Promise((resolve, reject) => {
-                            outputFile(join(www, jobOutput), state.data, (err) => {
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    resolve();
-                                }
-                            });
-                        }));
-
-                        return Promise.all(writePromises).then(() => {
-                            /**
-                             * @type {Array<Resource>}
-                             */
-                            let componentResources = resources.has(component) ? resources.get(component) : [];
-
-                            return componentResources.map((resource) => resolvePath(resource.source));
-                        });
-                    })
-                    .then((sourcesToWatch) => {
-                        watcher = new Gaze(sourcesToWatch).on('changed', (e) => {
-                            buildComponent(component, child, jobOutput)
-                                .then(() => {
-                                    let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
-
-                                    if (bs) {
-                                        logger.unprefixed('info', 'Reloading ' + jobOutput);
-
-                                        bs.reload(jobOutput);
-                                    }
-                                });
-                        });
-
-                        watchers.set(component, watcher);
-                    })
-                );
+                promises.push(buildComponentWithJob(component, child));
             }
 
             return Promise.all(promises);
         });
 };
-
-let initPromises = [];
 
 let component = new ComponentCompound('Field', [
     new ComponentCompound('Field__field', [

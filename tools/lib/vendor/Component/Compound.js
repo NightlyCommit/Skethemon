@@ -62,8 +62,6 @@ class ComponentCompound extends Component {
             .then(() => {
                 let state;
 
-                console.warn(states);
-
                 if (states.length) {
                     let statesData = states.map((state) => state.data);
 

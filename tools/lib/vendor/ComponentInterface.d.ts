@@ -1,6 +1,6 @@
 import {State} from './State';
 
-interface ComponentInterface extends IterableIterator {
+interface ComponentInterface {
     name: string;
 
     /**
