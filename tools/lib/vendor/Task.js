@@ -14,9 +14,10 @@ class Task {
 
     /**
      * @param {State} state
+     * @param {*} data
      * @return Promise<State[]>
      */
-    run(state) {
+    run(state, data) {
         return new Promise((resolve) => {
             resolve([
                 new State(this.name, state.data, null)

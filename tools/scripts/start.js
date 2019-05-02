@@ -1,9 +1,7 @@
-const {Component} = require('../lib/vendor/Component');
 const {ComponentDemoIndex} = require('../lib/Component/Demo/Index');
 const {ComponentDemoTest} = require('../lib/Component/Demo/Test');
 const {ComponentFilesystem} = require('../lib/vendor/Component/Filesystem');
 const {ComponentCompound} = require('../lib/vendor/Component/Compound');
-const {ComponentTwig} = require('../lib/Component/Twig');
 const {ComponentSass} = require('../lib/Component/Sass');
 const {ComponentJavaScript} = require('../lib/Component/JavaScript');
 const {Job} = require('../lib/vendor/Job');
@@ -12,24 +10,11 @@ const {TaskSass} = require('../lib/Task/Sass');
 const {TaskCssRebase} = require('../lib/Task/CssRebase');
 const {TaskBrowserify} = require('../lib/Task/Browserify');
 const {outputFile, copy} = require('fs-extra');
-const {create: createBrowserSync, has: hasBrowserSync, get: getBrowserSync} = require('browser-sync');
 const {join, dirname, resolve, relative} = require('path');
-const {Logger} = require('eazy-logger');
-const {Gaze} = require('gaze');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing/index');
 const {ContextResolver} = require('../lib/ContextResolver');
 const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
-const {Resource, ResourceType} = require('../lib/Resource');
-const rimraf = require('rimraf');
-const {inspect} = require('util');
-const {resolve: resolvePath} = require('path');
-
-let logger = new Logger({});
-
-/**
- * @type {Map<ComponentInterface, Resource[]>}
- */
-let resources = new Map();
+const {BuilderDevelopment: Builder} = require('../lib/Builder/Development');
 
 let jobDefinitions = new Map([
     ['twig', {
@@ -138,126 +123,6 @@ let outputDefinitions = new Map([
     ['sass', 'index.css']
 ]);
 
-/**
- * @type {Map<ComponentInterface, Map<Job, Gaze>>}
- */
-let watchers = new Map();
-
-/**
- * @param {ComponentInterface} component
- * @param {Job} job
- */
-let buildComponentWithJob = (component, job) => {
-    let output = outputDefinitions.get(job.name);
-    let www = join('www', component.name);
-
-    /**
-     * @type {Gaze}
-     */
-    let watcher;
-    let componentWatchers;
-
-    if (!watchers.has(component)) {
-        watchers.set(component, new Map());
-    }
-
-    componentWatchers = watchers.get(component);
-
-    if (componentWatchers.has(job)) {
-        watcher = componentWatchers.get(job);
-
-        watcher.close();
-    }
-
-    // console.warn('OUTPUT >>>', output);
-
-    let stateAndDataPromises = [
-        component.initialState(job.name),
-        component.data()
-    ];
-
-    let resources = [];
-
-    return Promise.all(stateAndDataPromises)
-        .then(([state, data]) => {
-            if (state) {
-                return job.run(state, new Map([[component.name, data]]))
-                    .then((states) => {
-                        return [state].concat(states);
-                    })
-            } else {
-                return [];
-            }
-        })
-        .then((states) => {
-            let writePromises = [];
-
-            // console.warn('LET US WRITE TO', job.name, www);
-
-            /**
-             * @type {State}
-             */
-            let state = states[states.length - 1];
-
-            // console.warn('LAST STATE FOR', job.name, state.data.toString());
-
-            let map = state.map;
-
-            if (map) {
-                let mapObject = JSON.parse(map.toString());
-
-                for (let source of mapObject.sources) {
-                    resources.push(new Resource(source));
-                }
-            }
-
-            for (let resource of resources) {
-                if (resource.type & ResourceType.COPY) {
-                    let dest = join(www, resource.source);
-
-                    writePromises.push(new Promise((resolve) => {
-                        copy(resource.source, dest, () => {
-                            resolve();
-                        });
-                    }));
-                }
-            }
-
-            writePromises.push(new Promise((resolve, reject) => {
-                outputFile(join(www, output), state.data, (err) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve();
-                    }
-                });
-            }));
-
-            return Promise.all(writePromises).then(() => {
-                return resources.map((resource) => resolvePath(resource.source));
-            });
-        })
-        .then((sourcesToWatch) => {
-            // console.warn('sOURCE FOR', job.name, sourcesToWatch);
-
-            watcher = new Gaze(sourcesToWatch).on('changed', () => {
-                buildComponentWithJob(component, job)
-                    .then(() => {
-                        let bs = hasBrowserSync(component.name) ? getBrowserSync(component.name) : null;
-
-                        if (bs) {
-                            logger.unprefixed('info', 'Reloading ' + output);
-
-                            bs.reload(output);
-                        }
-                    });
-            });
-
-            componentWatchers.set(job, watcher);
-        });
-};
-
-
 let filesystemLoader = new TwingLoaderFilesystem();
 
 filesystemLoader.addPath('tools', 'Lib');
@@ -311,23 +176,7 @@ let job = new Job('demo', [
     sassJob
 ]);
 
-/**
- * @param {ComponentInterface} component
- */
-let buildComponent = (component) => {
-    console.warn('WE BUILD ' + component.name + ' WITH JOB ' + job.name);
-
-    return Promise.resolve()
-        .then(() => {
-            let promises = [];
-
-            for (let child of job) {
-                promises.push(buildComponentWithJob(component, child));
-            }
-
-            return Promise.all(promises);
-        });
-};
+let builder = new Builder(job, outputDefinitions);
 
 let component = new ComponentCompound('Field', [
     new ComponentCompound('Field__field', [
@@ -346,63 +195,6 @@ let component = new ComponentCompound('Field', [
 ]);
 
 
-let browserSyncInit = (component) => new Promise((resolve, reject) => {
-    let browserSync = createBrowserSync(component.name);
-    let browserSyncConfig = {
-        server: join('www', component.name),
-        ui: false,
-        open: false,
-        notify: false,
-        logLevel: 'silent'
-    };
-
-    browserSync.init(browserSyncConfig, (err, bs) => {
-        if (err) {
-            reject(err);
-        } else {
-            let urls = bs.options.get("urls");
-
-            let maxLength = 0;
-
-            let name = component.name;
-            let localURL = urls.get('local');
-            let message = name + localURL;
-
-            maxLength = Math.max(maxLength, message.length);
-
-            maxLength += 2;
-
-            logger.unprefixed('info', '{bold: Access URLs:}');
-            logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
-            logger.unprefixed('info', ' %s: {bold:%s}', localURL, name);
-            logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
-
-            resolve(bs);
-        }
-    });
-});
-
 component = new ComponentDemoIndex(component);
 
-browserSyncInit(component)
-    .then(() => {
-        return buildComponent(component);
-    });
-
-
-// component = component;
-
-// buildComponent(component.getChild('field'), twigJob, 'index.html');
-// buildComponent(component, twigJob, 'super-index.html');
-// buildComponent(new ComponentDemoIndex(component.getChild('Field__field')), job);
-// buildComponent(new ComponentDemoIndex(component), twigJob);
-//
-// buildComponent(component, sassJob, 'index.css');
-
-// app.getComponent('Field').initialState()
-//     .then((state) => {
-//         return job.run(state);
-//     })
-//     .then((state) => {
-//         console.warn(state);
-//     });
+builder.buildComponent(component);
