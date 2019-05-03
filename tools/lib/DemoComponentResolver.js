@@ -3,6 +3,7 @@ const {join: joinPath, dirname: pathDirname, resolve: resolvePath} = require('pa
 const {ComponentDemoTest} = require('./Component/Demo/Test');
 const {ComponentDemoIndex} = require('./Component/Demo/Index');
 const {ComponentSass} = require('./Component/Sass');
+const {ComponentJavaScript} = require('./Component/JavaScript');
 const {ComponentCompound} = require('./vendor/Component/Compound');
 
 class DemoComponentResolver extends ComponentResolver {
@@ -16,7 +17,7 @@ class DemoComponentResolver extends ComponentResolver {
         let component = super.createComponent(entry, name, path);
 
         if (entry.name === 'index.html.twig') {
-            component = new ComponentDemoTest(component, resolvePath(joinPath(pathDirname(path), 'test_cases.js')));
+            component = new ComponentDemoTest(component, joinPath(pathDirname(component.path), 'test_cases.js'));
         }
 
         return component;
@@ -33,7 +34,8 @@ class DemoComponentResolver extends ComponentResolver {
 
                 component.addChild(
                     new ComponentCompound(demoComponentName, [
-                        new ComponentSass(demoComponentName, 'tools/demo/index.scss')
+                        new ComponentSass(demoComponentName, 'tools/demo/index.scss'),
+                        new ComponentJavaScript(demoComponentName, 'tools/demo/index.js')
                     ])
                 );
 
