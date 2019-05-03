@@ -1,9 +1,6 @@
 const {ComponentDemo} = require('../Demo');
 
 class ComponentDemoIndex extends ComponentDemo {
-    /**
-     * @param {ComponentInterface} component
-     */
     constructor(component) {
         super(component.name, 'tools/demo/index.html.twig');
 
@@ -25,11 +22,11 @@ class ComponentDemoIndex extends ComponentDemo {
         return this.component.data()
             .then((data) => {
                 return {
-                    title: this.name.split('_').join('/'),
+                    title: this.name,
                     timestamp: new Date().getTime(),
                     language: 'en',
                     direction: 'ltr',
-                    children: data
+                    content: data
                 };
             });
     }

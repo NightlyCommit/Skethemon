@@ -6,58 +6,65 @@ const {ComponentTwig} = require('./Component/Twig');
 const {ComponentCompound} = require('./vendor/Component/Compound');
 
 class ComponentResolver {
+    constructor(root) {
+        this._root = root;
+    }
+
     /**
-     * @param {string} root
      * @return Promise<ComponentCompound>
      */
-    resolve(root) {
-        let absoluteRoot = resolvePath(root);
+    resolve() {
+        let resolveAt = (root) => {
+            let absoluteRoot = resolvePath(root);
 
-        return new Promise((resolve) => {
-            readdir(absoluteRoot, {withFileTypes: true},
-                /**
-                 * @param err
-                 * @param {Dirent[]} entries
-                 */
-                (err, entries) => {
-                    let promises = [];
-                    let children = [];
+            return new Promise((resolve) => {
+                readdir(absoluteRoot, {withFileTypes: true},
+                    /**
+                     * @param err
+                     * @param {Dirent[]} entries
+                     */
+                    (err, entries) => {
+                        let promises = [];
+                        let children = [];
 
-                    for (let entry of entries) {
+                        for (let entry of entries) {
 
-                        if (entry.isDirectory()) {
-                            promises.push(this.resolve(joinPath(root, entry.name)));
-                        } else {
-                            let componentPath = joinPath(root, entry.name);
-                            let componentName = pathDirname(componentPath);
+                            if (entry.isDirectory()) {
+                                promises.push(resolveAt(joinPath(root, entry.name)));
+                            } else {
+                                let componentPath = joinPath(root, entry.name);
+                                let componentName = pathDirname(componentPath);
 
-                            let component = this.createComponent(entry, componentName, componentPath);
+                                let component = this.createComponent(entry, componentName, componentPath);
 
-                            if (component) {
-                                children.push(component);
+                                if (component) {
+                                    children.push(component);
+                                }
                             }
                         }
+
+                        resolve(Promise.all(promises)
+                            .then((components) => {
+                                for (let child of children) {
+                                    components.unshift(child);
+                                }
+
+                                return new ComponentCompound(root, components);
+                            })
+                        );
                     }
+                )
+            });
+        };
 
-                    resolve(Promise.all(promises)
-                        .then((components) => {
-                            for (let child of children) {
-                                components.unshift(child);
-                            }
-
-                            return new ComponentCompound(root, components);
-                        })
-                    );
-                }
-            )
-        });
+        return resolveAt(this._root);
     }
 
     /**
      * @param {Dirent} entry
      * @param {string} name
      * @param {string} path
-     * @return {ComponentInterface}
+     * @return {ComponentFilesystem}
      */
     createComponent(entry, name, path) {
         let component;

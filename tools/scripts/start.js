@@ -1,4 +1,3 @@
-const {ComponentDemoIndex} = require('../lib/Component/Demo/Index');
 const {ComponentDemoTest} = require('../lib/Component/Demo/Test');
 const {ComponentFilesystem} = require('../lib/vendor/Component/Filesystem');
 const {ComponentCompound} = require('../lib/vendor/Component/Compound');
@@ -179,21 +178,10 @@ let job = new Job('demo', [
 
 let builder = new Builder(job, outputDefinitions);
 
-let componentResolver = new DemoComponentResolver();
+let componentResolver = new DemoComponentResolver('test');
 
-componentResolver.resolve('test/Field/Formatter/image-formatter')
+componentResolver.resolve()
     .then((component) => {
-        // inject demo components
-        let demoComponentName = join(component.name, 'Demo');
-
-        component.addChild(
-            new ComponentCompound(demoComponentName, [
-                new ComponentSass(demoComponentName, 'tools/demo/index.scss')
-            ])
-        );
-
-        component = new ComponentDemoIndex(component);
-
         console.warn('component', inspect(component, false, 100));
 
         builder.buildComponent(component);

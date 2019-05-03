@@ -5,18 +5,17 @@ const requireUncached = require('require-uncached');
 
 class ComponentDemoTest extends ComponentDemo {
     /**
-     * @param {string} name
-     * @param {string} template
+     * @param {ComponentFilesystem} component
      * @param {string} dataModulePath
      */
-    constructor(name, template, dataModulePath) {
-        super(name, 'tools/demo/test.html.twig');
+    constructor(component, dataModulePath) {
+        super(component.name, 'tools/demo/test.html.twig');
 
         /**
-         * @type {string}
+         * @type {ComponentFilesystem}
          * @private
          */
-        this._template = template;
+        this._component = component;
 
         /**
          * @type {string}
@@ -25,8 +24,11 @@ class ComponentDemoTest extends ComponentDemo {
         this._dataModulePath = dataModulePath;
     }
 
-    get template() {
-        return this._template;
+    /**
+     * @returns {ComponentFilesystem}
+     */
+    get component() {
+        return this._component;
     }
 
     get dataModulePath() {
@@ -37,7 +39,7 @@ class ComponentDemoTest extends ComponentDemo {
         return new Promise((resolve, reject) => {
             let data = {
                 cases: [],
-                case_template: resolvePath(this.template),
+                case_template: resolvePath(this.component.path),
                 title: this.name,
                 template: resolvePath(this.path),
             };
@@ -68,7 +70,6 @@ class ComponentDemoTest extends ComponentDemo {
             });
         });
     }
-
 }
 
 exports.ComponentDemoTest = ComponentDemoTest;
