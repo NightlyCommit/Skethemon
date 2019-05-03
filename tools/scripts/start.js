@@ -122,7 +122,8 @@ const {inspect} = require('util');
  */
 let outputDefinitions = new Map([
     ['twig', 'index.html'],
-    ['sass', 'index.css']
+    ['sass', 'index.css'],
+    ['js', 'index.js']
 ]);
 
 let twigJob = new Job('twig', [
@@ -167,15 +168,13 @@ let sassJob = new Job('sass', [
 ]);
 
 let javaScriptJob = new Job('js', [
-    new TaskBrowserify('browserify', {
-        // basedir: dirname(component.path)
-    })
+    new TaskBrowserify('browserify')
 ]);
 
 let job = new Job('demo', [
     twigJob,
     sassJob,
-    // javaScriptJob
+    javaScriptJob
 ]);
 
 let builder = new Builder(job, outputDefinitions);

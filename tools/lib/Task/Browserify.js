@@ -28,6 +28,7 @@ class TaskBrowserify extends Task {
         });
 
         let config = Object.assign({}, this.config, {
+            basedir: state.name,
             entries: [readable],
             debug: true
         });
@@ -54,7 +55,7 @@ class TaskBrowserify extends Task {
                         let sources = [];
 
                         for (let source of map.getProperty('sources')) {
-                            sources.push(join(this.config.basedir, source));
+                            sources.push(join(state.name, source));
                         }
 
                         map.setProperty('sources', sources);
