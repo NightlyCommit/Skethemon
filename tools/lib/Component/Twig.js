@@ -19,7 +19,6 @@ class ComponentTwig extends ComponentFilesystem {
 
         return Promise.resolve(state);
     }
-
 }
 
 exports.ComponentTwig = ComponentTwig;

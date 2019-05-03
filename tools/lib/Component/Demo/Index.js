@@ -35,12 +35,16 @@ class ComponentDemoIndex extends ComponentDemo {
     }
 
     initialState(name = null) {
-        if (name === 'twig') {
-            return super.initialState(name);
-        }
-        else {
-            return this.component.initialState(name);
-        }
+        return super.initialState(name)
+            .then((state) => {
+                if (state) {
+                    console.warn('INDEX STATE', state);
+
+                    return Promise.resolve(state);
+                } else {
+                    return this.component.initialState(name);
+                }
+            });
     }
 }
 

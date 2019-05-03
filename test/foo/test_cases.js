@@ -1,5 +1,10 @@
 module.exports = () => {
-    return {
-        content: 'Hello foo!'
-    };
+    return [
+        {
+            title: 'With FOO',
+            content: {
+                content: 'FOO'
+            }
+        }
+    ];
 };

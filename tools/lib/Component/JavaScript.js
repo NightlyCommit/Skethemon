@@ -1,6 +1,6 @@
 const {ComponentFilesystem} = require('../vendor/Component/Filesystem');
 const {State} = require('../vendor/State');
-const {resolve: pathResolve} = require('path');
+const {resolve: resolvePath} = require('path');
 
 /**
  * @class
@@ -11,9 +11,13 @@ class ComponentJavaScript extends ComponentFilesystem {
      * @returns {Promise<State>}
      */
     initialState(name = null) {
-        return new Promise((resolve) => {
-            resolve(new State(this.name, `require('${pathResolve(this.path)}');`, null));
-        });
+        let state;
+
+        if (name === 'js') {
+            state = new State(this.name, `require('${resolvePath(this.path)}');`, null);
+        }
+
+        return Promise.resolve(state);
     }
 }
 

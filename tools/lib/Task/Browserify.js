@@ -2,9 +2,8 @@ const {Task} = require('../vendor/Task');
 const {State} = require('../vendor/State');
 const {Readable, Writable} = require('stream');
 const {join} = require('path');
-
-const Browserify = require('browserify');
 const {fromSource, removeComments} = require('convert-source-map');
+const Browserify = require('browserify');
 
 class TaskBrowserify extends Task {
     constructor(name, config) {
@@ -15,9 +14,10 @@ class TaskBrowserify extends Task {
 
     /**
      * @param {State} state
+     * @param {*} data
      * @returns {Promise<State[]>}
      */
-    run(state) {
+    run(state, data) {
         let currentFile = null;
 
         let readable = new Readable({

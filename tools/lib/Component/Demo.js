@@ -4,13 +4,13 @@ const {resolve: resolvePath} = require('path');
 
 class ComponentDemo extends ComponentFilesystem {
     initialState(name = null) {
-        let data;
+        let state;
 
         if (name === 'twig') {
-            data = `{{ include("${resolvePath(this.path)}", ${this.name}) }}`;
+            state = new State(this.name, `{{ include("${resolvePath(this.path)}", ${this.name}) }}`);
         }
 
-        return Promise.resolve(new State(this.name, data ? data : ''));
+        return Promise.resolve(state);
     }
 }
 

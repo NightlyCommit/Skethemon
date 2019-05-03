@@ -1,3 +1,1 @@
-require('./test');
-
 module.exports = {};

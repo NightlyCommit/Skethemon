@@ -88,10 +88,12 @@ class BuilderDevelopment extends Builder {
                                 }
                             });
 
-                            watcher = new Gaze(toWatch).on('changed', () => {
+                            watcher = new Gaze(toWatch).on('changed', (file) => {
+                                this.logger.unprefixed('info', '{yellow:%s} did {bold:change} ', file);
+
                                 this.buildComponentWithTask(component, task)
                                     .then(() => {
-                                        this.logger.unprefixed('info', 'Reloading ' + output);
+                                        this.logger.unprefixed('info', 'Reloading {yellow:%s}', output);
 
                                         browserSync.reload(output);
                                     });
@@ -103,22 +105,23 @@ class BuilderDevelopment extends Builder {
                     promises.push(buildPromise);
                 }
 
-                let maxLength = 0;
+                return Promise.all(promises)
+                    .then(() => {
+                        let maxLength = 0;
 
-                let name = component.name;
-                let localURL = urls.get('local');
-                let message = name + localURL;
+                        let name = component.name;
+                        let localURL = urls.get('local');
+                        let message = name + localURL;
 
-                maxLength = Math.max(maxLength, message.length);
+                        maxLength = Math.max(maxLength, message.length);
 
-                maxLength += 2;
+                        maxLength += 2;
 
-                this.logger.unprefixed('info', '{bold: Access URLs:}');
-                this.logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
-                this.logger.unprefixed('info', ' %s: {bold:%s}', localURL, name);
-                this.logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
-
-                return Promise.all(promises);
+                        this.logger.unprefixed('info', '{bold: Access URLs:}');
+                        this.logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
+                        this.logger.unprefixed('info', ' %s: {bold:%s}', localURL, name);
+                        this.logger.unprefixed('info', '{grey: %s}', '-'.repeat(maxLength));
+                    });
             });
     };
 }

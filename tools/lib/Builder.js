@@ -2,6 +2,7 @@ const {outputFile, copy} = require('fs-extra');
 const {join} = require('path');
 const {Resource, ResourceType} = require('../lib/Resource');
 const {Logger} = require('eazy-logger');
+const {inspect} = require('util');
 
 class Builder {
     /**

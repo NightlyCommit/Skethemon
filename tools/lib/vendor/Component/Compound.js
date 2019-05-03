@@ -38,6 +38,13 @@ class ComponentCompound extends Component {
     }
 
     /**
+     * @param {ComponentInterface} component
+     */
+    addChild(component) {
+        this._children.push(component);
+    }
+
+    /**
      * @param {string|null} name
      * @returns {Promise<State>}
      */
