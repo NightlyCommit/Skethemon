@@ -23,7 +23,7 @@
     <img src="{{ image.url|default('https://picsum.photos/id/1/' ~ default_image_width|default(300) ~ '/' ~ default_image_height|default(300)) }}" alt="{{ image.alt|default(defaultImageTitle) }}" title="{{ image.title|default(defaultImageTitle) }}">
 {% endset %}
 
-{% include "@Src/Field/Formatter/image-formatter/index.html.twig" with {
+{% include "../../../../src/Field/Formatter/image-formatter/index.html.twig" with {
     image: image,
     url: url
 } only %}

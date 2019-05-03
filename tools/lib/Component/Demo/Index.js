@@ -25,7 +25,7 @@ class ComponentDemoIndex extends ComponentDemo {
         return this.component.data()
             .then((data) => {
                 return {
-                    title: this.name,
+                    title: this.name.split('_').join('/'),
                     timestamp: new Date().getTime(),
                     language: 'en',
                     direction: 'ltr',
@@ -38,8 +38,6 @@ class ComponentDemoIndex extends ComponentDemo {
         return super.initialState(name)
             .then((state) => {
                 if (state) {
-                    console.warn('INDEX STATE', state);
-
                     return Promise.resolve(state);
                 } else {
                     return this.component.initialState(name);

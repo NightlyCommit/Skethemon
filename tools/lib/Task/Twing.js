@@ -33,7 +33,7 @@ class TaskTwing extends Task {
             .then((context) => {
                 let loader = new TwingLoaderChain([
                     new TwingLoaderArray(new Map([[
-                        this._config.file, state.data
+                        state.name, state.data
                     ]])),
                     this._config.loader
                 ]);
@@ -44,7 +44,7 @@ class TaskTwing extends Task {
                     env.addExtension(extension, name);
                 }
 
-                let render = env.render(this._config.file, data);
+                let render = env.render(state.name, data);
 
                 return new State(this.name, render, Buffer.from(env.getSourceMap()));
             });

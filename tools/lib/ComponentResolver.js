@@ -24,13 +24,13 @@ class ComponentResolver {
                     let children = [];
 
                     for (let entry of entries) {
-                        console.warn(entry);
 
                         if (entry.isDirectory()) {
                             promises.push(this.resolve(joinPath(root, entry.name)));
                         } else {
                             let componentPath = joinPath(root, entry.name);
                             let componentName = pathDirname(componentPath);
+
                             let component = this.createComponent(entry, componentName, componentPath);
 
                             if (component) {
@@ -45,7 +45,7 @@ class ComponentResolver {
                                 components.unshift(child);
                             }
 
-                            return new ComponentCompound(root.split('/').join('_'), components);
+                            return new ComponentCompound(root, components);
                         })
                     );
                 }

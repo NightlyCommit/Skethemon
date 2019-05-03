@@ -12,8 +12,6 @@ class DemoComponentResolver extends ComponentResolver {
     createComponent(entry, name, path) {
         let component;
 
-        name = name.split(pathSeparator).join(' > ');
-
         if (entry.name === 'index.html.twig') {
             component = new ComponentDemoTest(name, path, resolvePath(joinPath(pathDirname(path), 'test_cases.js')));
         } else {
@@ -24,5 +22,4 @@ class DemoComponentResolver extends ComponentResolver {
     }
 }
 
-exports
-    .DemoComponentResolver = DemoComponentResolver;
+exports.DemoComponentResolver = DemoComponentResolver;

@@ -132,16 +132,8 @@ module.exports = class extends Generator {
             );
         });
 
-        extensions.forEach(function (ext) {
-            that.fs.copyTpl(
-                that.templatePath('test.' + ext + '.ejs'),
-                that.destinationPath(testPath, 'test.' + ext),
-                data
-            );
-        });
-
         that.fs.copyTpl(
-            that.templatePath('test.data.js.ejs'),
+            that.templatePath('test_cases.js.ejs'),
             that.destinationPath(testPath, 'test_cases.js'),
             data
         );

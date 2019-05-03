@@ -3,6 +3,7 @@ const {join} = require('path');
 const {Resource, ResourceType} = require('../lib/Resource');
 const {Logger} = require('eazy-logger');
 const {inspect} = require('util');
+const {getSlug} = require('./getSlug');
 
 class Builder {
     /**
@@ -59,8 +60,6 @@ class Builder {
         let output = this.outputDefinitions.get(task.name);
         let www = join('www', component.name);
 
-        // console.warn('OUTPUT >>>', output);
-
         let stateAndDataPromises = [
             component.initialState(task.name),
             component.data()
@@ -74,7 +73,9 @@ class Builder {
         return Promise.all(stateAndDataPromises)
             .then(([state, data]) => {
                 if (state) {
-                    return task.run(state, new Map([[component.name, data]]))
+                    data = new Map([[getSlug(component.name, '__'), data]]);
+
+                    return task.run(state, data)
                         .then((states) => {
                             return [state].concat(states);
                         })
@@ -137,7 +138,7 @@ class Builder {
      * @param {ComponentInterface} component
      */
     buildComponent(component) {
-        console.warn('WE BUILD ' + component.name + ' WITH JOB ' + this.job.name);
+        // console.warn('WE BUILD ' + component.name + ' WITH JOB ' + this.job.name);
 
         return Promise.resolve()
             .then(() => {

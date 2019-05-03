@@ -125,17 +125,10 @@ let outputDefinitions = new Map([
     ['sass', 'index.css']
 ]);
 
-let filesystemLoader = new TwingLoaderFilesystem();
-
-filesystemLoader.addPath('tools', 'Lib');
-filesystemLoader.addPath('src', 'Src');
-filesystemLoader.addPath('test', 'Test');
-
 let twigJob = new Job('twig', [
     new TaskTwing('render', {
-        file: 'Field/index.html.twig', //component.name,
         loader: new TwingLoaderChain([
-            filesystemLoader,
+            new TwingLoaderFilesystem(),
             new TwingLoaderRelativeFilesystem(),
         ]),
         extensions: new Map([
@@ -143,7 +136,7 @@ let twigJob = new Job('twig', [
             ['drupal', new TwingExtensionDrupal()]
         ]),
         environment_options: {
-            cache: join('tmp/twig', 'Field/field'),
+            cache: join('tmp', 'twig'),
             debug: true,
             auto_reload: true,
             source_map: true,
@@ -189,10 +182,10 @@ let builder = new Builder(job, outputDefinitions);
 
 let componentResolver = new DemoComponentResolver();
 
-componentResolver.resolve('test/Field/Formatter')
+componentResolver.resolve('test/Field/Formatter/image-formatter')
     .then((component) => {
         // inject demo components
-        let demoComponentName = [component.name, 'Demo'].join('_');
+        let demoComponentName = join(component.name, 'Demo');
 
         component.addChild(
             new ComponentCompound(demoComponentName, [
@@ -202,7 +195,7 @@ componentResolver.resolve('test/Field/Formatter')
 
         component = new ComponentDemoIndex(component);
 
-        // console.warn('component', inspect(component, false, 100));
+        console.warn('component', inspect(component, false, 100));
 
         builder.buildComponent(component);
     });
