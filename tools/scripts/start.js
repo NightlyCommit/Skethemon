@@ -1,15 +1,9 @@
-const {ComponentDemoTest} = require('../lib/Component/Demo/Test');
-const {ComponentFilesystem} = require('../lib/vendor/Component/Filesystem');
-const {ComponentCompound} = require('../lib/vendor/Component/Compound');
-const {ComponentSass} = require('../lib/Component/Sass');
-const {ComponentJavaScript} = require('../lib/Component/JavaScript');
 const {Job} = require('../lib/vendor/Job');
 const {TaskTwing} = require('../lib/Task/Twing');
 const {TaskSass} = require('../lib/Task/Sass');
 const {TaskCssRebase} = require('../lib/Task/CssRebase');
 const {TaskBrowserify} = require('../lib/Task/Browserify');
-const {outputFile, copy} = require('fs-extra');
-const {join, dirname, resolve, relative} = require('path');
+const {join: joinPath} = require('path');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing/index');
 const {ContextResolver} = require('../lib/ContextResolver');
 const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
@@ -136,7 +130,7 @@ let twigJob = new Job('twig', [
             ['drupal', new TwingExtensionDrupal()]
         ]),
         environment_options: {
-            cache: join('tmp', 'twig'),
+            cache: joinPath('tmp', 'twig'),
             debug: true,
             auto_reload: true,
             source_map: true,
