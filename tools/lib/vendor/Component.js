@@ -24,16 +24,19 @@ class Component {
 
     /**
      * @param {string|null} name
+     * @param {Function} addDependency
      * @return {Promise<State>}
      */
-    initialState(name = null) {
+    initialState(name = null, addDependency = null) {
         return Promise.resolve();
     };
 
     /**
+     * @param {string|null} name
+     * @param {Function} addDependency
      * @return {Promise<*>}
      */
-    data() {
+    data(name = null, addDependency = null) {
         return Promise.resolve();
     };
 }

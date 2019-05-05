@@ -60,22 +60,26 @@ class Builder {
         let output = this.outputDefinitions.get(task.name);
         let www = join('www', component.name);
 
-        let stateAndDataPromises = [
-            component.initialState(task.name),
-            component.data()
-        ];
-
         /**
          * @type {Resource[]}
          */
-        let resources = [];
+        let dependencies = [];
+
+        let addDependency = (source, destination = null) => {
+            dependencies.push(new Resource(source, destination));
+        };
+
+        let stateAndDataPromises = [
+            component.initialState(task.name, addDependency),
+            component.data(task.name, addDependency)
+        ];
 
         return Promise.all(stateAndDataPromises)
             .then(([state, data]) => {
                 if (state) {
                     data = new Map([[getSlug(component.name, '__'), data]]);
 
-                    return task.run(state, data)
+                    return task.run(state, data, addDependency)
                         .then((states) => {
                             return [state].concat(states);
                         })
@@ -101,16 +105,16 @@ class Builder {
                     let mapObject = JSON.parse(map.toString());
 
                     for (let source of mapObject.sources) {
-                        resources.push(new Resource(source));
+                        dependencies.push(new Resource(source));
                     }
                 }
 
-                for (let resource of resources) {
-                    if (resource.type & ResourceType.COPY) {
-                        let dest = join(www, resource.source);
+                for (let dependency of dependencies) {
+                    if (dependency.destination) {
+                        let dest = join(www, dependency.destination);
 
                         writePromises.push(new Promise((resolve) => {
-                            copy(resource.source, dest, () => {
+                            copy(dependency.source, dest, () => {
                                 resolve();
                             });
                         }));
@@ -129,7 +133,7 @@ class Builder {
 
                 return Promise.all(writePromises)
                     .then(() => {
-                        return resources;
+                        return dependencies;
                     });
             })
     }

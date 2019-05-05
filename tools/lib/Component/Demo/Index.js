@@ -18,16 +18,26 @@ class ComponentDemoIndex extends ComponentDemo {
         return this._component;
     }
 
-    data() {
-        return this.component.data()
+    /**
+     * @param {string} name
+     * @param {Function} addDependency
+     * @returns {Promise<*>}
+     */
+    data(name = null, addDependency = null) {
+        return this.component.data(name, addDependency)
             .then((data) => {
-                return {
-                    title: this.name,
-                    timestamp: new Date().getTime(),
-                    language: 'en',
-                    direction: 'ltr',
-                    content: data
-                };
+                if (data) {
+                    return {
+                        title: this.name,
+                        timestamp: new Date().getTime(),
+                        language: 'en',
+                        direction: 'ltr',
+                        content: data
+                    };
+                }
+                else {
+                    return this.component.data(name, addDependency);
+                }
             });
     }
 
@@ -35,7 +45,7 @@ class ComponentDemoIndex extends ComponentDemo {
         return super.initialState(name)
             .then((state) => {
                 if (state) {
-                    return Promise.resolve(state);
+                    return state;
                 } else {
                     return this.component.initialState(name);
                 }

@@ -20,6 +20,13 @@ module.exports = (require) => {
             content: {
                 default_image_height: 800
             }
+        },
+        {
+            title: 'Square',
+            content: {
+                default_image_width: 1700,
+                default_image_height: 80
+            }
         }
     ];
 };

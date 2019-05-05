@@ -83,10 +83,10 @@ class BuilderDevelopment extends Builder {
                     let buildPromise = this.buildComponentWithTask(component, task)
                         .then((resources) => {
                             let toWatch = resources.map((resource) => {
-                                if (resource.type | ResourceType.WATCH) {
-                                    return resource.source;
-                                }
+                                return resource.source;
                             });
+
+                            console.warn('T WATCH', toWatch, 'for', task.name);
 
                             watcher = new Gaze(toWatch).on('changed', (file) => {
                                 this.logger.unprefixed('info', '{yellow:%s} did {bold:change} ', file);

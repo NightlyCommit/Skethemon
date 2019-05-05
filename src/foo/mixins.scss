@@ -1,5 +1,5 @@
 @import "./variables";
 
 @mixin foo() {
-
+    background-image: url(./assets/bar.jpg);
 }

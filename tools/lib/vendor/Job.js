@@ -33,17 +33,18 @@ class Job extends Task {
     /**
      * @param {State} state
      * @param {*} data
+     * @param {Function} addDependency
      * @returns {Promise<State>}
      */
-    run(state, data) {
+    run(state, data, addDependency = null) {
         let runFunctions = this.tasks.map((task) => {
             return task.run.bind(task);
         });
 
-        return runFunctions.reduce((accumulatorPromise, nextPromise) => {
+        return runFunctions.reduce((accumulatorPromise, currentPromise) => {
             return accumulatorPromise
                 .then((state) => {
-                    return nextPromise(state, data);
+                    return currentPromise(state, data, addDependency);
                 })
         }, Promise.resolve(state))
             .then((state) => {

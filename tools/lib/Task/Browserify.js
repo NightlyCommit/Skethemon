@@ -63,9 +63,7 @@ class TaskBrowserify extends Task {
                         js = removeComments(js) + map.toComment();
                     }
 
-                    resolve([
-                        new State(this.name, js, map ? Buffer.from(map.toJSON()) : null)
-                    ]);
+                    resolve(new State(this.name, js, map ? Buffer.from(map.toJSON()) : null));
                 })
             ;
         });

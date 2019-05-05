@@ -5,110 +5,13 @@ const {TaskCssRebase} = require('../lib/Task/CssRebase');
 const {TaskBrowserify} = require('../lib/Task/Browserify');
 const {join: joinPath} = require('path');
 const {TwingExtensionDebug, TwingLoaderRelativeFilesystem, TwingLoaderFilesystem, TwingLoaderChain} = require('twing/index');
-const {ContextResolver} = require('../lib/ContextResolver');
 const {TwingExtensionDrupal} = require('../lib/Twing/Extension/Drupal');
 const {BuilderDevelopment: Builder} = require('../lib/Builder/Development');
 const {DemoComponentResolver} = require('../lib/DemoComponentResolver');
 const {inspect} = require('util');
-
-// let jobDefinitions = new Map([
-//     ['twig', {
-//         /**
-//          * @param {ComponentFilesystem} component
-//          * @returns {Job}
-//          */
-//         jobFactory: (component) => {
-//             let filesystemLoader = new TwingLoaderFilesystem();
-//
-//             filesystemLoader.addPath('src', 'Src');
-//             filesystemLoader.addPath('test', 'Test');
-//
-//             return new Job('Twig', [
-//                 new TaskTwing('render', {
-//                     file: component.name,
-//                     loader: new TwingLoaderChain([
-//                         filesystemLoader,
-//                         new TwingLoaderRelativeFilesystem(),
-//                     ]),
-//                     extensions: new Map([
-//                         ['debug', new TwingExtensionDebug()],
-//                         ['drupal', new TwingExtensionDrupal()]
-//                     ]),
-//                     environment_options: {
-//                         cache: join('tmp/twig', 'Field/field'),
-//                         debug: true,
-//                         auto_reload: true,
-//                         source_map: true,
-//                         autoescape: false
-//                     },
-//                     context_provider: ((file) => {
-//                         let contextResolver = new ContextResolver(file);
-//
-//                         return Promise.all([
-//                             contextResolver.getSources(),
-//                             contextResolver.getContext()
-//                         ]).then(([sources, context]) => {
-//                             let componentResources = resources.has(component) ? resources.get(component) : [];
-//
-//                             for (let source of sources) {
-//                                 let resource = new Resource(relative('.', source), ResourceType.WATCH);
-//
-//                                 componentResources.push(resource);
-//                             }
-//
-//                             resources.set(component, componentResources);
-//
-//                             return {
-//                                 test_cases: context
-//                             };
-//                         });
-//                     })(resolve(join('test/Field/field', 'test_cases.js')))
-//                 })
-//             ])
-//         },
-//         output: 'index.html'
-//     }],
-//     ['sass', {
-//         /**
-//          * @param {ComponentFilesystem} component
-//          * @returns {Job}
-//          */
-//         jobFactory: (component) => new Job('Stylesheet', [
-//             new TaskSass('sass', {
-//                 precision: 8,
-//                 file: resolve(component.path),
-//                 outFile: 'index.css',
-//                 sourceMap: true,
-//                 sourceMapEmbed: true
-//             }),
-//             new TaskCssRebase('rebase', {
-//                 rebase: (obj, done) => {
-//                     let resolved = obj.resolved;
-//                     let componentResources = resources.has(component) ? resources.get(component) : [];
-//
-//                     componentResources.push(new Resource(resolved.path));
-//
-//                     resources.set(component, componentResources);
-//
-//                     done();
-//                 }
-//             })
-//         ]),
-//         output: 'index.css'
-//     }],
-//     ['js', {
-//         /**
-//          * @param {ComponentFilesystem} component
-//          * @returns {Job}
-//          */
-//         jobFactory: (component) => new Job('JavaScript', [
-//             new TaskBrowserify('browserify', {
-//                 basedir: dirname(component.path)
-//             })
-//         ]),
-//         output: 'index.js'
-//     }],
-// ]);
+const {parse: parseUrl} = require('url');
+const {basename, extname, dirname, join} = require('path');
+const {getSlug} = require('../lib/getSlug');
 
 /**
  * @type {Map<string, string>}
@@ -144,20 +47,18 @@ let sassJob = new Job('sass', [
         precision: 8,
         outFile: outputDefinitions.get('sass'),
         sourceMap: true,
-        sourceMapEmbed: true
+        sourceMapEmbed: true,
+        sourceMapContents: true
     }),
-    // new TaskCssRebase('rebase', {
-    //     rebase: (obj, done) => {
-    //         // let resolved = obj.resolved;
-    //         // let componentResources = resources.has(component) ? resources.get(component) : [];
-    //         //
-    //         // componentResources.push(new Resource(resolved.path));
-    //         //
-    //         // resources.set(component, componentResources);
-    //
-    //         done();
-    //     }
-    // })
+    new TaskCssRebase('rebase', {
+        /**
+         * @param {{source: URL, url: URL, resolved: URL}} obj
+         * @param done
+         */
+        rebase: (obj, done) => {
+            done(parseUrl('assets/' + getSlug(join(dirname(obj.resolved.pathname), basename(obj.resolved.pathname, extname(obj.resolved.pathname)))) + extname(obj.resolved.pathname)));
+        }
+    })
 ]);
 
 let javaScriptJob = new Job('js', [

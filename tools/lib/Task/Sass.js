@@ -14,7 +14,7 @@ class TaskSass extends Task {
      * @param {State} state
      * @returns {Promise<State[]>}
      */
-    run(state) {
+    run(state, data, addDependency) {
         let sassConfig = Object.assign({}, this.config, {
             data: state.data
         });
@@ -28,9 +28,7 @@ class TaskSass extends Task {
                     let css = sassRenderResult.css;
                     let map = sassRenderResult.map ;
 
-                    resolve([
-                        new State(this.name, css, map)
-                    ]);
+                    resolve(new State(this.name, css, map));
                 }
             })
         })

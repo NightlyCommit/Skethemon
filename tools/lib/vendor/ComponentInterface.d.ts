@@ -4,13 +4,16 @@ interface ComponentInterface {
     name: string;
 
     /**
-     * @param {string|null} name
+     * @param {string} name
+     * @param {Function} addDependency
      * @return {Promise<State>}
      */
-    initialState(name = null): Promise<State>;
+    initialState(name?: string, addDependency?: Function): Promise<State>;
 
     /**
+     * @param {string} name
+     * @param {Function} addDependency
      * @return {Promise<*>}
      */
-    data(): Promise<any>;
+    data(name?: string, addDependency?: Function): Promise<any>;
 }

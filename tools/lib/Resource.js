@@ -1,26 +1,20 @@
-let ResourceType = {
-    COPY: 1,
-    WATCH: 2
-};
-
 class Resource {
     /**
-     * @param source
-     * @param {number} type
+     * @param {string} source
+     * @param {string|null} destination
      */
-    constructor(source, type = ResourceType.COPY | ResourceType.WATCH) {
+    constructor(source, destination = null) {
         this._source = source;
-        this._type = type;
+        this._destination = destination;
     }
 
     get source() {
         return this._source;
     }
 
-    get type() {
-        return this._type;
+    get destination() {
+        return this._destination;
     }
 }
 
-exports.ResourceType = ResourceType;
 exports.Resource = Resource;

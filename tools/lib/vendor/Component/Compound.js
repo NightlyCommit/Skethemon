@@ -46,13 +46,14 @@ class ComponentCompound extends Component {
 
     /**
      * @param {string|null} name
+     * @param {Function} addDependency
      * @returns {Promise<State>}
      */
-    initialState(name = null) {
+    initialState(name = null, addDependency = null) {
         let states = [];
 
         let promises = this.children.map((component) => {
-            return component.initialState(name)
+            return component.initialState(name, addDependency)
                 .then((state) => {
                     if (state) {
                         states.push(state);
@@ -60,10 +61,10 @@ class ComponentCompound extends Component {
                 });
         });
 
-        return promises.reduce((accumulator, next) => {
+        return promises.reduce((accumulator, currentValue) => {
             return accumulator
                 .then(() => {
-                    return next
+                    return currentValue
                 })
         }, Promise.resolve())
             .then(() => {
@@ -79,18 +80,23 @@ class ComponentCompound extends Component {
             });
     }
 
-    data() {
+    /**
+     * @param {string} name
+     * @param {Function} addDependency
+     * @returns {Promise<Map<string, Map>>}
+     */
+    data(name = null, addDependency = null) {
         /**
          * @type {Map<string, Map>}
          */
         let data = new Map();
 
         let promises = this.children.map((component) => {
-            return component.data()
+            return component.data(name, addDependency)
                 .then((componentData) => {
-                    data.set(component.name, componentData);
-
-                    return Promise.resolve();
+                    if (componentData) {
+                        data.set(component.name, componentData);
+                    }
                 });
         });
 
